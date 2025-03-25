@@ -7,8 +7,9 @@ import { PlatformIcon } from "@/utils/platforms";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Copy } from "lucide-react";
+import { BarChart3, Copy, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import BulkLinkButton from "@/components/BulkLinkButton";
 
 export default function Dashboard() {
   const { setCurrentView, setSelectedLink, setShowNewLinkModal, showNewLinkModal } = useContext(AppContext);
@@ -209,7 +210,8 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold text-gray-900">Recent Links</h2>
             <p className="mt-2 text-sm text-gray-700">A list of your most recently created tracking links.</p>
           </div>
-          <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+          <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex space-x-2">
+            <BulkLinkButton />
             <Button 
               onClick={() => setShowNewLinkModal(true)}
               className="bg-primary-600 text-white hover:bg-primary-700"
