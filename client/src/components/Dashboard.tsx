@@ -164,14 +164,19 @@ export default function Dashboard() {
         </div>
         <div className="px-4 py-5 sm:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="border rounded-md p-4 flex justify-between items-center">
+            <div className="border-2 border-primary-200 rounded-md p-4 flex justify-between items-center bg-primary-50 hover:bg-primary-100 transition-colors cursor-pointer"
+              onClick={() => setShowNewLinkModal(true)}>
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Create New Link</h3>
                 <p className="mt-1 text-sm text-gray-500">Generate a new tracking link for your promotion</p>
               </div>
               <Button 
-                onClick={() => setShowNewLinkModal(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNewLinkModal(true);
+                }}
                 className="bg-primary-600 text-white hover:bg-primary-700"
+                size="lg"
               >
                 <span className="mr-1 text-lg font-bold">+</span> Create
               </Button>
