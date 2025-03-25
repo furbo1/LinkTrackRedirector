@@ -56,21 +56,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Is this a bot/crawler requesting the page? (e.g., social media preview)
       const userAgent = req.headers["user-agent"] || "";
-      const isBot = /bot|crawl|facebook|twitter|linkedin|pinterest|slack|discord|telegram/i.test(userAgent);
       
-      // Record the click (not for bots/crawlers)
-      if (!isBot) {
-        await storage.recordClick({
-          linkId: link.id,
-          ip: req.ip,
-          userAgent: userAgent || null,
-          referrer: req.headers.referer || null,
-          location: null, // Would require a geo-IP service
-          metadata: {
-            headers: req.headers,
-            query: req.query
-          }
-        });
+      // Enhanced bot detection
+      const isBot = /bot|crawl|facebook|twitter|linkedin|pinterest|slack|discord|telegram|preview|fetch|curl|wget|headless|phantom|selenium|webdriver|chrome-lighthouse/i.test(userAgent);
+      
+      // Additional checks for automated requests
+      const isAutomated = 
+        req.query.notrack === "1" || 
+        req.headers["sec-fetch-mode"] === "navigate" && req.headers["sec-fetch-dest"] === "document" && req.headers.accept?.includes("text/html") && !req.headers.referer;
+      
+      // Record the click but avoid double counting
+      // 1. Don't count bots/crawlers
+      // 2. Don't count likely automated or preview requests
+      // 3. Use session cookie to prevent frequent double-clicking
+      if (!isBot && !isAutomated) {
+        // Check for click tracking cookie to prevent duplicates in quick succession
+        const trackingKey = `clicked_${link.id}`;
+        const alreadyClicked = req.cookies && req.cookies[trackingKey];
+        
+        if (!alreadyClicked) {
+          // Set a cookie that expires in 30 seconds to prevent multiple counts
+          res.cookie(trackingKey, "1", { 
+            maxAge: 30000, // 30 seconds
+            httpOnly: true,
+            sameSite: "strict"
+          });
+          
+          // Record the legitimate click
+          await storage.recordClick({
+            linkId: link.id,
+            ip: req.ip,
+            userAgent: userAgent || null,
+            referrer: req.headers.referer || null,
+            location: null, // Would require a geo-IP service
+            metadata: {
+              headers: req.headers,
+              query: req.query
+            }
+          });
+        }
       }
       
       // If it's a bot, send a preview page with meta tags

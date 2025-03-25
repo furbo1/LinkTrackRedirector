@@ -33,7 +33,7 @@ export class MemStorage implements IStorage {
   // Link methods
   async createLink(linkData: Omit<InsertLink, "trackingId">): Promise<Link> {
     const id = this.linkIdCounter++;
-    const trackingId = nanoid(8); // Generate a unique 8-character ID
+    const trackingId = nanoid(5); // Generate a unique 5-character ID, shorter and cleaner
     const now = new Date();
     
     const link: Link = {
