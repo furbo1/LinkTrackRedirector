@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import { LinkWithAnalytics } from "@shared/schema";
+import CreateNewLinkButton from "@/components/CreateNewLinkButton";
 
 export type ActiveView = "dashboard" | "links" | "linkDetails" | "settings";
 
@@ -50,6 +51,11 @@ function App() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [showNewLinkModal, setShowNewLinkModal] = useState(false);
   
+  // Initialize the modal closed
+  const openNewLinkModal = () => {
+    setShowNewLinkModal(true);
+  };
+  
   const contextValue: AppContextType = {
     currentView,
     setCurrentView,
@@ -67,6 +73,7 @@ function App() {
         <div className="min-h-screen flex flex-col">
           <Router />
           <Toaster />
+          <CreateNewLinkButton />
         </div>
       </AppContext.Provider>
     </QueryClientProvider>

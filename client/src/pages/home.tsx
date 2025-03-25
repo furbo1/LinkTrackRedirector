@@ -41,12 +41,12 @@ export default function Home() {
       <NewLinkModal />
       
       {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-8">
+      <div className="fixed bottom-8 right-8 z-50">
         <Button
           onClick={() => setShowNewLinkModal(true)}
-          className="h-16 w-16 rounded-full bg-primary-600 hover:bg-primary-700 shadow-lg"
+          className="h-16 w-16 rounded-full bg-primary-600 hover:bg-primary-700 shadow-lg pulse-effect"
         >
-          <span className="text-3xl text-white">+</span>
+          <span className="text-3xl text-white font-bold">+</span>
         </Button>
       </div>
     </>
