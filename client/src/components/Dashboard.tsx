@@ -169,8 +169,11 @@ export default function Dashboard() {
                 <h3 className="text-lg font-medium text-gray-900">Create New Link</h3>
                 <p className="mt-1 text-sm text-gray-500">Generate a new tracking link for your promotion</p>
               </div>
-              <Button onClick={() => setShowNewLinkModal(true)}>
-                Create
+              <Button 
+                onClick={() => setShowNewLinkModal(true)}
+                className="bg-primary-600 text-white hover:bg-primary-700"
+              >
+                <span className="mr-1 text-lg font-bold">+</span> Create
               </Button>
             </div>
             
@@ -195,8 +198,11 @@ export default function Dashboard() {
             <p className="mt-2 text-sm text-gray-700">A list of your most recently created tracking links.</p>
           </div>
           <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-            <Button onClick={() => setShowNewLinkModal(true)}>
-              Add link
+            <Button 
+              onClick={() => setShowNewLinkModal(true)}
+              className="bg-primary-600 text-white hover:bg-primary-700"
+            >
+              <span className="mr-1 text-lg font-bold">+</span> Add Link
             </Button>
           </div>
         </div>
