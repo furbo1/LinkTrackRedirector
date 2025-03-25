@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { AppContext } from "@/App";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -7,9 +7,10 @@ import LinksTable from "@/components/LinksTable";
 import LinkDetails from "@/components/LinkDetails";
 import Settings from "@/components/Settings";
 import NewLinkModal from "@/components/NewLinkModal";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const { currentView } = useContext(AppContext);
+  const { currentView, setShowNewLinkModal } = useContext(AppContext);
 
   const renderContent = () => {
     switch (currentView) {
@@ -38,6 +39,16 @@ export default function Home() {
         </div>
       </main>
       <NewLinkModal />
+      
+      {/* Floating Action Button */}
+      <div className="fixed bottom-8 right-8">
+        <Button
+          onClick={() => setShowNewLinkModal(true)}
+          className="h-16 w-16 rounded-full bg-primary-600 hover:bg-primary-700 shadow-lg"
+        >
+          <span className="text-3xl text-white">+</span>
+        </Button>
+      </div>
     </>
   );
 }

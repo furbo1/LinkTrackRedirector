@@ -111,9 +111,9 @@ export default function NewLinkModal() {
 
   return (
     <Dialog open={showNewLinkModal} onOpenChange={setShowNewLinkModal}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="text-center">Create New Link</DialogTitle>
+      <DialogContent className="sm:max-w-lg bg-white border-2 border-primary-200">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-center text-2xl font-bold text-primary-700">Create New Link</DialogTitle>
           <DialogDescription className="text-center">
             Create a new tracking link for your promotion. This will generate a unique URL that you can share.
           </DialogDescription>
@@ -166,8 +166,10 @@ export default function NewLinkModal() {
           <Button 
             onClick={handleCreateLink}
             disabled={createLinkMutation.isPending}
+            className="bg-primary-600 text-white hover:bg-primary-700 font-semibold"
+            size="lg"
           >
-            {createLinkMutation.isPending ? "Creating..." : "Create"}
+            {createLinkMutation.isPending ? "Creating..." : "Create Link"}
           </Button>
         </DialogFooter>
       </DialogContent>

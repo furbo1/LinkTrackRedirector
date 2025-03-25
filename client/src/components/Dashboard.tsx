@@ -11,7 +11,7 @@ import { BarChart3, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
-  const { setCurrentView, setSelectedLink, setShowNewLinkModal } = useContext(AppContext);
+  const { setCurrentView, setSelectedLink, setShowNewLinkModal, showNewLinkModal } = useContext(AppContext);
   const { toast } = useToast();
   
   const { data: links, isLoading } = useQuery<LinkWithAnalytics[]>({
