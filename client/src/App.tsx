@@ -6,7 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import { LinkWithAnalytics } from "@shared/schema";
-import CreateNewLinkButton from "@/components/CreateNewLinkButton";
+import DirectLinkModal from "@/components/DirectLinkModal";
+import DashboardDirectButton from "@/components/DashboardDirectButton";
 
 export type ActiveView = "dashboard" | "links" | "linkDetails" | "settings";
 
@@ -73,7 +74,8 @@ function App() {
         <div className="min-h-screen flex flex-col">
           <Router />
           <Toaster />
-          <CreateNewLinkButton />
+          <DirectLinkModal />
+          <DashboardDirectButton />
         </div>
       </AppContext.Provider>
     </QueryClientProvider>

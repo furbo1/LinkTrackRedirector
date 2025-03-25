@@ -162,24 +162,17 @@ export default function Dashboard() {
         <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
           <h3 className="text-lg leading-6 font-medium text-gray-900">Quick Actions</h3>
           
-          {/* Direct access button that bypasses context, using window.alert */}
           <button 
-            onClick={() => {
-              window.alert('Opening modal');
-              setShowNewLinkModal(true);
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            onClick={() => setShowNewLinkModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
           >
-            Emergency Create Link
+            Create New Link
           </button>
         </div>
         <div className="px-4 py-5 sm:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="border-2 border-primary-200 rounded-md p-4 flex justify-between items-center bg-primary-50 hover:bg-primary-100 transition-colors cursor-pointer"
-              onClick={() => {
-                window.alert('Opening modal from card click');
-                setShowNewLinkModal(true);
-              }}>
+              onClick={() => setShowNewLinkModal(true)}>
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Create New Link</h3>
                 <p className="mt-1 text-sm text-gray-500">Generate a new tracking link for your promotion</p>
@@ -187,7 +180,6 @@ export default function Dashboard() {
               <Button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.alert('Opening modal from button click');
                   setShowNewLinkModal(true);
                 }}
                 className="bg-primary-600 text-white hover:bg-primary-700"
