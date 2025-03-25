@@ -8,6 +8,8 @@ import NotFound from "@/pages/not-found";
 import { LinkWithAnalytics } from "@shared/schema";
 import DirectLinkModal from "@/components/DirectLinkModal";
 import DashboardDirectButton from "@/components/DashboardDirectButton";
+import NewLinkModal from "@/components/NewLinkModal";
+import BulkLinkModal from "@/components/BulkLinkModal";
 
 export type ActiveView = "dashboard" | "links" | "linkDetails" | "settings";
 
@@ -20,6 +22,8 @@ export type AppContextType = {
   setIsNavOpen: (isOpen: boolean) => void;
   showNewLinkModal: boolean;
   setShowNewLinkModal: (show: boolean) => void;
+  showBulkLinkModal: boolean;
+  setShowBulkLinkModal: (show: boolean) => void;
 };
 
 export const createInitialContext = (): AppContextType => ({
@@ -31,6 +35,8 @@ export const createInitialContext = (): AppContextType => ({
   setIsNavOpen: () => {},
   showNewLinkModal: false,
   setShowNewLinkModal: () => {},
+  showBulkLinkModal: false,
+  setShowBulkLinkModal: () => {},
 });
 
 // This is a global state that we'll pass down to components
@@ -51,6 +57,7 @@ function App() {
   const [selectedLink, setSelectedLink] = useState<LinkWithAnalytics | null>(null);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [showNewLinkModal, setShowNewLinkModal] = useState(false);
+  const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
   
   // Initialize the modal closed
   const openNewLinkModal = () => {
@@ -66,6 +73,8 @@ function App() {
     setIsNavOpen,
     showNewLinkModal,
     setShowNewLinkModal,
+    showBulkLinkModal,
+    setShowBulkLinkModal,
   };
 
   return (
@@ -76,6 +85,8 @@ function App() {
           <Toaster />
           <DirectLinkModal />
           <DashboardDirectButton />
+          <NewLinkModal />
+          <BulkLinkModal />
         </div>
       </AppContext.Provider>
     </QueryClientProvider>
