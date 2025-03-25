@@ -124,6 +124,41 @@ export default function LinkDetails() {
           </dl>
         </div>
       </div>
+      
+      {/* Social Media Preview */}
+      {(selectedLink.ogTitle || selectedLink.ogImage || selectedLink.ogDescription) && (
+        <div className="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Social Media Preview</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">How your link will appear when shared on social media.</p>
+          </div>
+          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <div className="border border-gray-200 rounded-md overflow-hidden max-w-2xl">
+              {/* Mockup of social media card */}
+              <div className="p-4">
+                {selectedLink.ogImage && (
+                  <div className="mb-4 max-h-64 overflow-hidden rounded-md">
+                    <img 
+                      src={selectedLink.ogImage} 
+                      alt={selectedLink.ogTitle || selectedLink.name} 
+                      className="w-full object-cover"
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  </div>
+                )}
+                <div className="mb-2 text-sm text-gray-500 uppercase truncate">{window.location.hostname}</div>
+                <h3 className="text-lg font-semibold truncate mb-1">{selectedLink.ogTitle || selectedLink.name}</h3>
+                {selectedLink.ogDescription && (
+                  <p className="text-sm text-gray-600 line-clamp-3">{selectedLink.ogDescription}</p>
+                )}
+                {selectedLink.ogPrice && (
+                  <div className="mt-2 text-sm font-medium text-green-600">${selectedLink.ogPrice} USD</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Performance Chart */}
       <div className="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
