@@ -44,8 +44,8 @@ async function fetchOpenGraphData(url: string) {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
-  // Redirect endpoint with preview page - /r/:trackingId
-  app.get("/r/:trackingId", async (req: Request, res: Response) => {
+  // Redirect endpoint with preview page - /:trackingId (even shorter URLs!)
+  app.get("/:trackingId", async (req: Request, res: Response) => {
     try {
       const { trackingId } = req.params;
       const link = await storage.getLinkByTrackingId(trackingId);

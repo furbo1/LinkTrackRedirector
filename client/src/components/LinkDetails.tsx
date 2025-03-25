@@ -38,7 +38,7 @@ export default function LinkDetails() {
     });
   };
 
-  const shortUrl = `${window.location.origin}/r/${selectedLink.trackingId}`;
+  const shortUrl = `${window.location.origin}/${selectedLink.trackingId}`;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

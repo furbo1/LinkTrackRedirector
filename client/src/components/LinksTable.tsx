@@ -81,7 +81,7 @@ export default function LinksTable() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           <div className="flex items-center">
-                            <span className="font-mono text-xs mr-2">{`${window.location.origin}/r/${link.trackingId}`}</span>
+                            <span className="font-mono text-xs mr-2">{`${window.location.origin}/${link.trackingId}`}</span>
                             <Button 
                               variant="ghost" 
                               size="sm" 

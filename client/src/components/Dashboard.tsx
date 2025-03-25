@@ -245,12 +245,12 @@ export default function Dashboard() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           <div className="flex items-center">
-                            <span className="font-mono text-xs mr-2">{`${window.location.origin}/r/${link.trackingId}`}</span>
+                            <span className="font-mono text-xs mr-2">{`${window.location.origin}/${link.trackingId}`}</span>
                             <Button 
                               variant="ghost" 
                               size="sm" 
                               className="h-6 text-primary-600 hover:text-primary-900 text-xs p-0"
-                              onClick={() => copyToClipboard(`${window.location.origin}/r/${link.trackingId}`)}
+                              onClick={() => copyToClipboard(`${window.location.origin}/${link.trackingId}`)}
                             >
                               Copy
                             </Button>
@@ -315,12 +315,12 @@ export default function Dashboard() {
               <div className="sm:col-span-2">
                 <dt className="text-sm font-medium text-gray-500">Tracking URL</dt>
                 <dd className="mt-1 text-sm text-gray-900 font-mono flex items-center">
-                  <span>{`${window.location.origin}/r/${topLink.trackingId}`}</span>
+                  <span>{`${window.location.origin}/${topLink.trackingId}`}</span>
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="ml-2 h-6 text-primary-600 hover:text-primary-900 text-xs"
-                    onClick={() => copyToClipboard(`${window.location.origin}/r/${topLink.trackingId}`)}
+                    onClick={() => copyToClipboard(`${window.location.origin}/${topLink.trackingId}`)}
                   >
                     <Copy className="h-3 w-3 mr-1" />
                     Copy
