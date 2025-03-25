@@ -79,6 +79,14 @@ export default function BulkLinkModal() {
     }
   });
 
+  // Mutation for bulk link creation
+  const bulkCreateLinksMutation = useMutation({
+    mutationFn: async (urls: string[]) => {
+      const response = await apiRequest('POST', '/api/links/bulk', { urls });
+      return response.json();
+    }
+  });
+
   const handleProcessUrls = async () => {
     if (!urls.trim()) {
       toast({
@@ -97,70 +105,30 @@ export default function BulkLinkModal() {
       .map(url => url.trim())
       .filter(url => url.length > 0);
     
-    const newResults: BulkLinkResult[] = [];
-    
-    // Process each URL
-    for (const url of urlList) {
-      try {
-        // Validate URL
-        new URL(url);
-        
-        const platform = detectPlatform(url);
-        const name = generateNameFromUrl(url, platform);
-        
-        // Create the link
-        try {
-          const result = await createLinkMutation.mutateAsync({
-            name,
-            destination: url,
-            platform
-          });
-          
-          newResults.push({
-            destination: url,
-            platform,
-            name,
-            trackingId: result.trackingId,
-            success: true,
-            ogTitle: result.ogTitle,
-            ogDescription: result.ogDescription,
-            ogImage: result.ogImage,
-            ogPrice: result.ogPrice
-          });
-        } catch (error) {
-          newResults.push({
-            destination: url,
-            platform,
-            name,
-            trackingId: '',
-            success: false,
-            error: error instanceof Error ? error.message : 'Failed to create link'
-          });
-        }
-      } catch (error) {
-        // Invalid URL
-        newResults.push({
-          destination: url,
-          platform: 'unknown',
-          name: 'Invalid URL',
-          trackingId: '',
-          success: false,
-          error: 'Invalid URL format'
+    try {
+      // Process URLs in bulk using server endpoint
+      const newResults = await bulkCreateLinksMutation.mutateAsync(urlList);
+      
+      setResults(newResults);
+      
+      // Invalidate and refetch links query
+      queryClient.invalidateQueries({ queryKey: ['/api/links'] });
+      
+      if (newResults.some((r: BulkLinkResult) => r.success)) {
+        toast({
+          title: "Links processed",
+          description: `Successfully created ${newResults.filter((r: BulkLinkResult) => r.success).length} of ${urlList.length} links`,
         });
       }
-    }
-    
-    setResults(newResults);
-    setIsProcessing(false);
-    
-    // Invalidate and refetch links query
-    queryClient.invalidateQueries({ queryKey: ['/api/links'] });
-    
-    if (newResults.some(r => r.success)) {
+    } catch (error) {
+      console.error("Error processing bulk links:", error);
       toast({
-        title: "Links processed",
-        description: `Successfully created ${newResults.filter(r => r.success).length} of ${urlList.length} links`,
+        title: "Error processing links",
+        description: error instanceof Error ? error.message : "Failed to process links",
+        variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 

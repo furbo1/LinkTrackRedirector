@@ -160,6 +160,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to get platform statistics" });
     }
   });
+
+  // Bulk create links
+  apiRouter.post("/links/bulk", async (req: Request, res: Response) => {
+    try {
+      const bulkData: {urls: string[]} = req.body;
+      
+      if (!Array.isArray(bulkData.urls) || bulkData.urls.length === 0) {
+        return res.status(400).json({ message: "Invalid bulk URLs data. Expected an array of URL strings." });
+      }
+      
+      const results = [];
+      
+      for (const url of bulkData.urls) {
+        try {
+          // Validate URL
+          new URL(url);
+          
+          // Detect platform
+          let platform = 'other';
+          try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname.includes('amazon') || urlObj.hostname.includes('amzn')) {
+              platform = 'amazon';
+            } else if (urlObj.hostname.includes('temu')) {
+              platform = 'temu';
+            }
+          } catch (e) {
+            // Keep platform as 'other'
+          }
+          
+          // Generate name
+          let name = `Product Link ${new Date().toISOString()}`;
+          try {
+            const urlObj = new URL(url);
+            const path = urlObj.pathname;
+            
+            if (platform === 'amazon') {
+              name = `Amazon Product ${path.split('/').filter(Boolean)[0] || new Date().toISOString()}`;
+            } else if (platform === 'temu') {
+              name = `Temu Product ${path.split('/').filter(Boolean)[0] || new Date().toISOString()}`;
+            }
+          } catch (e) {
+            // Use default name
+          }
+          
+          // Create link with basic info first (faster than waiting for OG data)
+          const linkData = {
+            name,
+            destination: url,
+            platform
+          };
+          
+          const link = await storage.createLink(linkData);
+          
+          // Return success immediately
+          results.push({
+            destination: url,
+            platform,
+            name,
+            trackingId: link.trackingId,
+            success: true,
+            ogTitle: link.ogTitle,
+            ogDescription: link.ogDescription,
+            ogImage: link.ogImage,
+            ogPrice: link.ogPrice
+          });
+          
+          // Fetch Open Graph data in the background after response
+          // This avoids timeouts but still populates the metadata eventually
+          fetchOpenGraphData(url)
+            .then(async (ogData) => {
+              try {
+                // Manually update the link with OG data (storage.updateLink would be ideal here)
+                // But we don't have that method, so we'll update the in-memory object directly
+                // In a real app with a database, you'd update the record here
+                if (storage instanceof MemStorage) {
+                  const existingLink = storage.linksData.get(link.id);
+                  if (existingLink) {
+                    existingLink.ogTitle = ogData.title;
+                    existingLink.ogDescription = ogData.description;
+                    existingLink.ogImage = ogData.image;
+                    existingLink.ogPrice = ogData.price;
+                  }
+                }
+              } catch (e) {
+                console.error(`Failed to update link ${link.id} with OG data:`, e);
+              }
+            })
+            .catch((err) => {
+              console.error(`Failed to fetch OG data for ${url}:`, err);
+            });
+          
+        } catch (error) {
+          console.error(`Error processing URL ${url}:`, error);
+          
+          results.push({
+            destination: url,
+            platform: 'unknown',
+            name: 'Error',
+            trackingId: '',
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to create link'
+          });
+        }
+      }
+      
+      return res.status(201).json(results);
+    } catch (error) {
+      console.error("Error bulk creating links:", error);
+      return res.status(500).json({ message: "Failed to process bulk links" });
+    }
+  });
   
   // Redirect endpoint with preview page - /:trackingId (shorter URLs without /r/ prefix)
   // This must come after all API routes to avoid conflicts
