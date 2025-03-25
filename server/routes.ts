@@ -1,12 +1,10 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLinkSchema, insertClickSchema } from "@shared/schema";
+import { insertLinkSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
-import path from "path";
-import fs from "fs";
 
 // Function to fetch Open Graph data from a URL
 async function fetchOpenGraphData(url: string) {
@@ -44,8 +42,139 @@ async function fetchOpenGraphData(url: string) {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
-  // Redirect endpoint with preview page - /:trackingId (even shorter URLs!)
-  app.get("/:trackingId", async (req: Request, res: Response) => {
+  // Prefix for API routes to distinguish them from frontend routes
+  const apiRouter = express.Router();
+  app.use('/api', apiRouter);
+  
+  // Define a set of paths that should be handled by the frontend router
+  const frontendPaths = ['/', '/settings', '/links', '/link/:id'];
+
+  // API Endpoints
+  // Get all links with analytics
+  apiRouter.get("/links", async (_req: Request, res: Response) => {
+    try {
+      const links = await storage.getLinksWithAnalytics();
+      return res.json(links);
+    } catch (error) {
+      console.error("Error getting links:", error);
+      return res.status(500).json({ message: "Failed to get links" });
+    }
+  });
+
+  // Get a single link with analytics
+  apiRouter.get("/links/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid link ID" });
+      }
+      
+      const link = await storage.getLinkWithAnalytics(id);
+      if (!link) {
+        return res.status(404).json({ message: "Link not found" });
+      }
+      
+      return res.json(link);
+    } catch (error) {
+      console.error("Error getting link:", error);
+      return res.status(500).json({ message: "Failed to get link" });
+    }
+  });
+
+  // Create a new link
+  apiRouter.post("/links", async (req: Request, res: Response) => {
+    try {
+      // Parse and validate the request body
+      const data = insertLinkSchema.omit({ trackingId: true, ogTitle: true, ogDescription: true, ogImage: true, ogPrice: true }).parse(req.body);
+      
+      // Fetch Open Graph data from the destination URL
+      const ogData = await fetchOpenGraphData(data.destination);
+      
+      const linkData = {
+        ...data,
+        ogTitle: ogData.title,
+        ogDescription: ogData.description,
+        ogImage: ogData.image,
+        ogPrice: ogData.price
+      };
+      
+      // Create the link
+      const link = await storage.createLink(linkData);
+      
+      return res.status(201).json(link);
+    } catch (error) {
+      console.error("Error creating link:", error);
+      
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid link data", 
+          errors: error.errors 
+        });
+      }
+      
+      return res.status(500).json({ message: "Failed to create link" });
+    }
+  });
+  
+  // Get clicks for a specific link
+  apiRouter.get("/links/:id/clicks", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid link ID" });
+      }
+      
+      const link = await storage.getLinkById(id);
+      if (!link) {
+        return res.status(404).json({ message: "Link not found" });
+      }
+      
+      const clicks = await storage.getClicksByLinkId(id);
+      return res.json(clicks);
+    } catch (error) {
+      console.error("Error getting clicks:", error);
+      return res.status(500).json({ message: "Failed to get clicks" });
+    }
+  });
+
+  // Get platform statistics
+  apiRouter.get("/stats/platforms", async (_req: Request, res: Response) => {
+    try {
+      const links = await storage.getLinksWithAnalytics();
+      const platforms = new Map<string, number>();
+      
+      for (const link of links) {
+        const platform = link.platform;
+        const currentCount = platforms.get(platform) || 0;
+        platforms.set(platform, currentCount + link.clicks);
+      }
+      
+      const result = Array.from(platforms.entries()).map(([platform, clicks]) => ({
+        platform,
+        clicks
+      }));
+      
+      return res.json(result);
+    } catch (error) {
+      console.error("Error getting platform stats:", error);
+      return res.status(500).json({ message: "Failed to get platform statistics" });
+    }
+  });
+  
+  // Redirect endpoint with preview page - /:trackingId (shorter URLs without /r/ prefix)
+  // This must come after all API routes to avoid conflicts
+  app.get("/:trackingId", async (req: Request, res: Response, next: NextFunction) => {
+    // Skip redirect and pass to next middleware (frontend routes) if the path is a known frontend route
+    if (frontendPaths.includes(req.path)) {
+      return next();
+    }
+    
+    // Check if the trackingId looks like a valid tracking ID (alphanumeric string)
+    // This helps distinguish from other frontend routes
+    const { trackingId } = req.params;
+    if (!trackingId || trackingId.length > 10 || !/^[a-zA-Z0-9]+$/.test(trackingId)) {
+      return next();
+    }
     try {
       const { trackingId } = req.params;
       const link = await storage.getLinkByTrackingId(trackingId);
@@ -63,7 +192,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Additional checks for automated requests
       const isAutomated = 
         req.query.notrack === "1" || 
-        req.headers["sec-fetch-mode"] === "navigate" && req.headers["sec-fetch-dest"] === "document" && req.headers.accept?.includes("text/html") && !req.headers.referer;
+        (req.headers["sec-fetch-mode"] === "navigate" && 
+         req.headers["sec-fetch-dest"] === "document" && 
+         req.headers.accept?.includes("text/html") && 
+         !req.headers.referer);
       
       // Record the click but avoid double counting
       // 1. Don't count bots/crawlers
@@ -85,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Record the legitimate click
           await storage.recordClick({
             linkId: link.id,
-            ip: req.ip,
+            ip: req.ip || "",
             userAgent: userAgent || null,
             referrer: req.headers.referer || null,
             location: null, // Would require a geo-IP service
@@ -128,118 +260,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in redirect:", error);
       return res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  // API Endpoints
-  // Get all links with analytics
-  app.get("/api/links", async (_req: Request, res: Response) => {
-    try {
-      const links = await storage.getLinksWithAnalytics();
-      return res.json(links);
-    } catch (error) {
-      console.error("Error getting links:", error);
-      return res.status(500).json({ message: "Failed to get links" });
-    }
-  });
-
-  // Get a single link with analytics
-  app.get("/api/links/:id", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid link ID" });
-      }
-      
-      const link = await storage.getLinkWithAnalytics(id);
-      if (!link) {
-        return res.status(404).json({ message: "Link not found" });
-      }
-      
-      return res.json(link);
-    } catch (error) {
-      console.error("Error getting link:", error);
-      return res.status(500).json({ message: "Failed to get link" });
-    }
-  });
-
-  // Create a new link
-  app.post("/api/links", async (req: Request, res: Response) => {
-    try {
-      // Parse and validate the request body
-      const data = insertLinkSchema.omit({ trackingId: true, ogTitle: true, ogDescription: true, ogImage: true, ogPrice: true }).parse(req.body);
-      
-      // Fetch Open Graph data from the destination URL
-      const ogData = await fetchOpenGraphData(data.destination);
-      
-      const linkData = {
-        ...data,
-        ogTitle: ogData.title,
-        ogDescription: ogData.description,
-        ogImage: ogData.image,
-        ogPrice: ogData.price
-      };
-      
-      // Create the link
-      const link = await storage.createLink(linkData);
-      
-      return res.status(201).json(link);
-    } catch (error) {
-      console.error("Error creating link:", error);
-      
-      if (error instanceof ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid link data", 
-          errors: error.errors 
-        });
-      }
-      
-      return res.status(500).json({ message: "Failed to create link" });
-    }
-  });
-  
-  // Get clicks for a specific link
-  app.get("/api/links/:id/clicks", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid link ID" });
-      }
-      
-      const link = await storage.getLinkById(id);
-      if (!link) {
-        return res.status(404).json({ message: "Link not found" });
-      }
-      
-      const clicks = await storage.getClicksByLinkId(id);
-      return res.json(clicks);
-    } catch (error) {
-      console.error("Error getting clicks:", error);
-      return res.status(500).json({ message: "Failed to get clicks" });
-    }
-  });
-
-  // Get platform statistics
-  app.get("/api/stats/platforms", async (_req: Request, res: Response) => {
-    try {
-      const links = await storage.getLinksWithAnalytics();
-      const platforms = new Map<string, number>();
-      
-      for (const link of links) {
-        const platform = link.platform;
-        const currentCount = platforms.get(platform) || 0;
-        platforms.set(platform, currentCount + link.clicks);
-      }
-      
-      const result = Array.from(platforms.entries()).map(([platform, clicks]) => ({
-        platform,
-        clicks
-      }));
-      
-      return res.json(result);
-    } catch (error) {
-      console.error("Error getting platform stats:", error);
-      return res.status(500).json({ message: "Failed to get platform statistics" });
     }
   });
   

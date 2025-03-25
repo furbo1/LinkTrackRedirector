@@ -86,7 +86,7 @@ export default function LinksTable() {
                               variant="ghost" 
                               size="sm" 
                               className="h-6 text-primary-600 hover:text-primary-900 text-xs p-0"
-                              onClick={() => copyToClipboard(`${window.location.origin}/r/${link.trackingId}`)}
+                              onClick={() => copyToClipboard(`${window.location.origin}/${link.trackingId}`)}
                             >
                               Copy
                             </Button>
