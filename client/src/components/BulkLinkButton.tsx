@@ -10,9 +10,10 @@ export default function BulkLinkButton() {
     <Button 
       onClick={() => setShowBulkLinkModal(true)}
       variant="default"
-      className="bg-primary-600 text-white hover:bg-primary-700 flex items-center gap-2"
+      size="lg"
+      className="bg-primary-600 text-white hover:bg-primary-700 flex items-center gap-2 font-semibold px-6 py-2"
     >
-      <FileUp className="h-4 w-4" />
+      <FileUp className="h-5 w-5 mr-1" />
       <span>Bulk Convert</span>
     </Button>
   );
