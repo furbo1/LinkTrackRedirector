@@ -88,7 +88,18 @@ export default function NewLinkModal() {
     try {
       // Simple URL validation
       new URL(linkData.destination);
-      createLinkMutation.mutate(linkData);
+      
+      setIsLoading(true);
+      toast({
+        title: "Processing",
+        description: "Fetching product information and creating your link...",
+      });
+      
+      createLinkMutation.mutate(linkData, {
+        onSettled: () => {
+          setIsLoading(false);
+        }
+      });
     } catch (e) {
       toast({
         title: "Invalid URL",
