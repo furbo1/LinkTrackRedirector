@@ -26,6 +26,8 @@ export default function NewLinkModal() {
     destination: '',
     platform: 'temu'
   });
+  
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

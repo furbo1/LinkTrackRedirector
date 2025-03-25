@@ -43,6 +43,10 @@ export class MemStorage implements IStorage {
       destination: linkData.destination,
       platform: linkData.platform,
       created: now,
+      ogTitle: linkData.ogTitle || null,
+      ogDescription: linkData.ogDescription || null,
+      ogImage: linkData.ogImage || null,
+      ogPrice: linkData.ogPrice || null
     };
     
     this.linksData.set(id, link);

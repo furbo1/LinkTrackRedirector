@@ -10,6 +10,11 @@ export const links = pgTable("links", {
   destination: text("destination").notNull(),
   platform: text("platform").notNull(),
   created: timestamp("created").notNull().defaultNow(),
+  // New fields for Open Graph preview data
+  ogTitle: text("og_title"),
+  ogDescription: text("og_description"),
+  ogImage: text("og_image"),
+  ogPrice: text("og_price"),
 });
 
 // Table for click data
@@ -30,6 +35,10 @@ export const insertLinkSchema = createInsertSchema(links).pick({
   destination: true,
   platform: true,
   trackingId: true,
+  ogTitle: true,
+  ogDescription: true,
+  ogImage: true,
+  ogPrice: true,
 });
 
 export const insertClickSchema = createInsertSchema(clicks).pick({
