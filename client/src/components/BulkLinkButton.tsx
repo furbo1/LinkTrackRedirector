@@ -180,6 +180,16 @@ https://www.temu.com/product3.html"
                             </div>
                           </div>
                           <div className="text-xs truncate">{result.destination}</div>
+                          {result.ogDescription && (
+                            <div className="mt-1 text-xs text-gray-700 italic">
+                              Description: {result.ogDescription}
+                            </div>
+                          )}
+                          {result.ogTitle && !result.ogDescription && (
+                            <div className="mt-1 text-xs text-gray-700 italic">
+                              Title: {result.ogTitle}
+                            </div>
+                          )}
                           {result.success && (
                             <div className="mt-1 flex items-center gap-2">
                               <div className="bg-primary-100 text-primary-800 text-xs font-mono px-2 py-1 rounded">

@@ -9,29 +9,88 @@ async function fetchOpenGraphData(url: string) {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; LinkTracker/1.0; +https://linktracker.example.com)"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5"
       },
-      timeout: 5000 // 5 second timeout to avoid long waits
+      timeout: 8000 // 8 second timeout to allow more time for complex pages
     });
     
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    // Extract Open Graph data
+    // Extract Open Graph data with fallbacks
     const ogTitle = $('meta[property="og:title"]').attr('content') || 
+                    $('meta[name="twitter:title"]').attr('content') ||
                     $('title').text() || 
-                    $('meta[name="title"]').attr('content');
+                    $('meta[name="title"]').attr('content') ||
+                    $('h1').first().text();
                     
-    const ogDescription = $('meta[property="og:description"]').attr('content') || 
-                          $('meta[name="description"]').attr('content');
+    // Enhanced description extraction - try multiple sources
+    let ogDescription = $('meta[property="og:description"]').attr('content') || 
+                        $('meta[name="twitter:description"]').attr('content') ||
+                        $('meta[name="description"]').attr('content');
+    
+    // If no description found, try to extract from product description elements
+    if (!ogDescription) {
+      // Common product description elements
+      const possibleDescriptionSelectors = [
+        '.product-description', '#product-description', '.description',
+        '[data-testid="product-description"]', '.product-details', '.product-info',
+        '.details', '#description', 'p.description', '.item-description',
+        '.prod-desc', '.product-desc', '.prod-description'
+      ];
+      
+      for (const selector of possibleDescriptionSelectors) {
+        const descText = $(selector).first().text().trim();
+        if (descText && descText.length > 10) {
+          ogDescription = descText;
+          break;
+        }
+      }
+      
+      // If still no description, look for the first significant paragraph
+      if (!ogDescription) {
+        $('p').each((i, el) => {
+          const text = $(el).text().trim();
+          if (text && text.length > 30 && text.length < 500 && !ogDescription) {
+            ogDescription = text;
+            return false; // break the each loop
+          }
+        });
+      }
+    }
+    
+    // Try to truncate long descriptions
+    if (ogDescription && ogDescription.length > 300) {
+      ogDescription = ogDescription.substring(0, 297) + '...';
+    }
                           
     const ogImage = $('meta[property="og:image"]').attr('content') || 
-                    $('meta[property="og:image:url"]').attr('content');
+                    $('meta[property="og:image:url"]').attr('content') ||
+                    $('meta[name="twitter:image"]').attr('content') ||
+                    $('link[rel="image_src"]').attr('href');
                     
-    // Try to extract price information
-    const ogPrice = $('meta[property="og:price:amount"]').attr('content') || 
-                    $('meta[property="product:price:amount"]').attr('content') || 
-                    null;
+    // Enhanced price extraction
+    let ogPrice = $('meta[property="og:price:amount"]').attr('content') || 
+                  $('meta[property="product:price:amount"]').attr('content');
+                  
+    // If no meta price, try to find price in the content
+    if (!ogPrice) {
+      const priceSelectors = [
+        '.price', '#price', '.product-price', '.prod-price', 
+        '[data-testid="price"]', '.sale-price', '.current-price',
+        '.offer-price', '.special-price', '.discount-price'
+      ];
+      
+      for (const selector of priceSelectors) {
+        const priceText = $(selector).first().text().trim();
+        if (priceText && /\$?\d+(\.\d{2})?/.test(priceText)) {
+          ogPrice = priceText.match(/\$?\d+(\.\d{2})?/)?.[0] || null;
+          break;
+        }
+      }
+    }
     
     return {
       title: ogTitle || null,
