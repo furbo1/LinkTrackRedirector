@@ -3,10 +3,14 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cookieParser from "cookie-parser";
 
+console.log("Starting server initialization...");
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+console.log("Middleware configured...");
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -38,35 +42,68 @@ app.use((req, res, next) => {
   next();
 });
 
+console.log("Logger middleware configured...");
+
+// IIFE to handle async server startup
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    console.log("Starting server setup...");
+    
+    // Start the server immediately to meet the port availability check
+    // ALWAYS serve the app on port 5000 - this serves both API and client
+    const port = 5000;
+    
+    console.log("About to register routes...");
+    const server = await registerRoutes(app);
+    console.log("Routes registered successfully");
+    
+    // Start listening immediately
+    server.listen({
+      port,
+      host: "0.0.0.0",
+    }, () => {
+      log(`Server is running on port ${port}`);
+    });
+    console.log("Server listen called");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Add error handler for the server
+    server.on('error', (err) => {
+      console.error('Server error:', err);
+    });
+    console.log("Server error handler added");
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    // Setup the error handler after server is listening
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
+      console.error("Server error:", err);
+    });
+    console.log("App error handler added");
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // Then, after the server is listening, setup Vite
+    // This ensures the port is open before potentially slow Vite initialization
+    if (app.get("env") === "development") {
+      log("Setting up Vite...");
+      console.log("About to setup Vite...");
+      try {
+        await setupVite(app, server);
+        console.log("Vite setup completed successfully");
+      } catch (err) {
+        console.error("Vite setup error (non-fatal):", err);
+      }
+    } else {
+      serveStatic(app);
+      console.log("Static assets served");
+    }
+
+    log("Server initialization complete");
+  } catch (error) {
+    // Catch any errors during startup
+    console.error('Fatal error during server startup:', error);
+    process.exit(1); // Exit with error code
   }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+})().catch((err) => {
+  console.error('Unhandled promise rejection during startup:', err);
+  process.exit(1);
+});

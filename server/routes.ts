@@ -1,40 +1,51 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertLinkSchema } from "@shared/schema";
-import { ZodError } from "zod";
+import { storage, MemStorage } from "./storage";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 
 // Function to fetch Open Graph data from a URL
 async function fetchOpenGraphData(url: string) {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; LinkTracker/1.0; +https://linktracker.example.com)"
+      },
+      timeout: 5000 // 5 second timeout to avoid long waits
+    });
+    
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    const ogData = {
-      title: $('meta[property="og:title"]').attr('content') || 
-             $('meta[name="twitter:title"]').attr('content') || 
-             $('title').text() || '',
-      description: $('meta[property="og:description"]').attr('content') || 
-                  $('meta[name="twitter:description"]').attr('content') || 
-                  $('meta[name="description"]').attr('content') || '',
-      image: $('meta[property="og:image"]').attr('content') || 
-             $('meta[property="og:image:url"]').attr('content') || 
-             $('meta[name="twitter:image"]').attr('content') || '',
-      price: $('meta[property="og:price:amount"]').attr('content') || 
-             $('meta[property="product:price:amount"]').attr('content') || '',
-    };
+    // Extract Open Graph data
+    const ogTitle = $('meta[property="og:title"]').attr('content') || 
+                    $('title').text() || 
+                    $('meta[name="title"]').attr('content');
+                    
+    const ogDescription = $('meta[property="og:description"]').attr('content') || 
+                          $('meta[name="description"]').attr('content');
+                          
+    const ogImage = $('meta[property="og:image"]').attr('content') || 
+                    $('meta[property="og:image:url"]').attr('content');
+                    
+    // Try to extract price information
+    const ogPrice = $('meta[property="og:price:amount"]').attr('content') || 
+                    $('meta[property="product:price:amount"]').attr('content') || 
+                    null;
     
-    return ogData;
+    return {
+      title: ogTitle || null,
+      description: ogDescription || null,
+      image: ogImage || null,
+      price: ogPrice
+    };
   } catch (error) {
     console.error("Error fetching Open Graph data:", error);
     return {
-      title: '',
-      description: '',
-      image: '',
-      price: ''
+      title: null,
+      description: null,
+      image: null,
+      price: null
     };
   }
 }
@@ -47,9 +58,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', apiRouter);
   
   // Define a set of paths that should be handled by the frontend router
-  const frontendPaths = ['/', '/settings', '/links', '/link/:id'];
+  const frontendPaths = ['/', '/dashboard', '/settings', '/links', '/link'];
 
-  // API Endpoints
   // Get all links with analytics
   apiRouter.get("/links", async (_req: Request, res: Response) => {
     try {
@@ -61,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get a single link with analytics
+  // Get a single link by ID
   apiRouter.get("/links/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -84,39 +94,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new link
   apiRouter.post("/links", async (req: Request, res: Response) => {
     try {
-      // Parse and validate the request body
-      const data = insertLinkSchema.omit({ trackingId: true, ogTitle: true, ogDescription: true, ogImage: true, ogPrice: true }).parse(req.body);
+      const { name, destination, platform } = req.body;
       
-      // Fetch Open Graph data from the destination URL
-      const ogData = await fetchOpenGraphData(data.destination);
+      if (!name || !destination) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
       
-      const linkData = {
-        ...data,
+      try {
+        // Validate URL
+        new URL(destination);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid destination URL" });
+      }
+      
+      // Fetch Open Graph data
+      let ogData = {
+        title: null,
+        description: null,
+        image: null,
+        price: null
+      };
+      
+      try {
+        ogData = await fetchOpenGraphData(destination);
+      } catch (error) {
+        console.error("Error fetching Open Graph data:", error);
+        // Continue with null values
+      }
+      
+      const link = await storage.createLink({
+        name,
+        destination,
+        platform: platform || "other",
         ogTitle: ogData.title,
         ogDescription: ogData.description,
         ogImage: ogData.image,
         ogPrice: ogData.price
-      };
-      
-      // Create the link
-      const link = await storage.createLink(linkData);
+      });
       
       return res.status(201).json(link);
     } catch (error) {
       console.error("Error creating link:", error);
-      
-      if (error instanceof ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid link data", 
-          errors: error.errors 
-        });
-      }
-      
       return res.status(500).json({ message: "Failed to create link" });
     }
   });
-  
-  // Get clicks for a specific link
+
+  // Get clicks for a link
   apiRouter.get("/links/:id/clicks", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -129,8 +152,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Link not found" });
       }
       
-      const clicks = await storage.getClicksByLinkId(id);
-      return res.json(clicks);
+      // Get click data - last 30 days by default
+      const days = req.query.days ? parseInt(req.query.days as string) : 30;
+      const dailyClicks = await storage.getDailyClicksData(id, days);
+      const totalClicks = await storage.getClicksCount(id);
+      
+      return res.json({
+        totalClicks,
+        dailyClicks
+      });
     } catch (error) {
       console.error("Error getting clicks:", error);
       return res.status(500).json({ message: "Failed to get clicks" });
@@ -232,16 +262,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fetchOpenGraphData(url)
             .then(async (ogData) => {
               try {
-                // Manually update the link with OG data (storage.updateLink would be ideal here)
-                // But we don't have that method, so we'll update the in-memory object directly
-                // In a real app with a database, you'd update the record here
-                if (storage instanceof MemStorage) {
-                  const existingLink = storage.linksData.get(link.id);
-                  if (existingLink) {
-                    existingLink.ogTitle = ogData.title;
-                    existingLink.ogDescription = ogData.description;
-                    existingLink.ogImage = ogData.image;
-                    existingLink.ogPrice = ogData.price;
+                // Manually update the link with OG data
+                // Since we don't have an updateLink method, we'll use the storage implementation directly
+                // In a production app with a database, you'd do a proper update here
+                const existingLink = await storage.getLinkById(link.id);
+                if (existingLink) {
+                  // For MemStorage, we can update directly
+                  if (storage instanceof MemStorage) {
+                    const linkData = storage.linksData.get(link.id);
+                    if (linkData) {
+                      linkData.ogTitle = ogData.title;
+                      linkData.ogDescription = ogData.description;
+                      linkData.ogImage = ogData.image;
+                      linkData.ogPrice = ogData.price;
+                    }
                   }
                 }
               } catch (e) {
@@ -287,8 +321,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!trackingId || trackingId.length > 10 || !/^[a-zA-Z0-9]+$/.test(trackingId)) {
       return next();
     }
+    
     try {
-      const { trackingId } = req.params;
       const link = await storage.getLinkByTrackingId(trackingId);
       
       if (!link) {
