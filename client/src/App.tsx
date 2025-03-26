@@ -9,7 +9,6 @@ import { LinkWithAnalytics } from "@shared/schema";
 import DirectLinkModal from "@/components/DirectLinkModal";
 import DashboardDirectButton from "@/components/DashboardDirectButton";
 import NewLinkModal from "@/components/NewLinkModal";
-import BulkLinkModal from "@/components/BulkLinkModal";
 
 export type ActiveView = "dashboard" | "links" | "linkDetails" | "settings";
 
@@ -91,7 +90,6 @@ function App() {
           <DirectLinkModal />
           <DashboardDirectButton />
           <NewLinkModal />
-          <BulkLinkModal />
         </div>
       </AppContext.Provider>
     </QueryClientProvider>
