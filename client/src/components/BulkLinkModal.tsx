@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AppContext } from "@/App";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -6,15 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 // Types for bulk link processing
 type BulkLinkResult = {
@@ -152,114 +144,151 @@ export default function BulkLinkModal() {
         });
       });
   };
+  
+  // Handle clicks outside of the modal to close it
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        showBulkLinkModal &&
+        target.closest('.custom-modal-content') === null &&
+        !target.closest('.bulk-convert-button')
+      ) {
+        setShowBulkLinkModal(false);
+      }
+    };
 
-  // Add a debug log to verify modal state
+    if (showBulkLinkModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showBulkLinkModal, setShowBulkLinkModal]);
+
   console.log("BulkLinkModal rendering, modal is:", showBulkLinkModal ? "open" : "closed");
   
+  if (!showBulkLinkModal) return null;
+
   return (
-    <Dialog open={showBulkLinkModal} onOpenChange={setShowBulkLinkModal}>
-      <DialogContent className="sm:max-w-2xl bg-white border-2 border-primary-200">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="text-center text-2xl font-bold text-primary-700">Bulk Link Conversion</DialogTitle>
-          <DialogDescription className="text-center">
-            Convert multiple links at once. Enter one URL per line.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="mt-6 space-y-4">
-          <div className="grid w-full gap-1.5">
-            <Label htmlFor="bulk-urls">Enter URLs (one per line)</Label>
-            <Textarea 
-              id="bulk-urls" 
-              value={urls}
-              onChange={(e) => setUrls(e.target.value)}
-              placeholder="https://www.temu.com/product1.html
-https://www.amazon.com/product2.html
-https://www.temu.com/product3.html"
-              className="h-[150px] font-mono"
-            />
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="custom-modal-content sm:max-w-2xl w-full bg-white border-2 border-primary-200 rounded-lg shadow-xl">
+        <div className="relative p-6">
+          {/* Close button */}
+          <button 
+            onClick={() => setShowBulkLinkModal(false)} 
+            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
+          
+          {/* Header */}
+          <div className="pb-4 text-center">
+            <h2 className="text-2xl font-bold text-primary-700">Bulk Link Conversion</h2>
+            <p className="text-gray-500">
+              Convert multiple links at once. Enter one URL per line.
+            </p>
           </div>
           
-          {results.length > 0 && (
-            <div className="border rounded-lg p-4 mt-4 max-h-[200px] overflow-y-auto">
-              <div className="text-sm font-medium mb-2">Results:</div>
-              <div className="space-y-2">
-                {results.map((result, index) => (
-                  <div key={index} className={`text-sm p-2 rounded ${result.success ? 'bg-green-50' : 'bg-red-50'}`}>
-                    <div className="flex justify-between items-center">
-                      <div className="font-medium truncate max-w-[70%]">
-                        {result.success ? '✅' : '❌'} {result.name || 'Unnamed'}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {result.platform}
-                      </div>
-                    </div>
-                    <div className="text-xs truncate">{result.destination}</div>
-                    {result.success && (
-                      <div className="mt-1 flex items-center gap-2">
-                        <div className="bg-primary-100 text-primary-800 text-xs font-mono px-2 py-1 rounded">
-                          {window.location.origin}/{result.trackingId}
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-6 px-2"
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/${result.trackingId}`);
-                            toast({
-                              title: "Copied!",
-                              description: "Link copied to clipboard",
-                            });
-                          }}
-                        >
-                          Copy
-                        </Button>
-                      </div>
-                    )}
-                    {!result.success && (
-                      <div className="text-xs text-red-600 mt-1">{result.error}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {/* Content */}
+          <div className="mt-6 space-y-4">
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="bulk-urls">Enter URLs (one per line)</Label>
+              <Textarea 
+                id="bulk-urls" 
+                value={urls}
+                onChange={(e) => setUrls(e.target.value)}
+                placeholder="https://www.temu.com/product1.html
+https://www.amazon.com/product2.html
+https://www.temu.com/product3.html"
+                className="h-[150px] font-mono"
+              />
             </div>
-          )}
-        </div>
-        
-        <DialogFooter className="mt-6 sm:grid-cols-2 flex-wrap gap-2">
-          {results.length > 0 && (
+            
+            {results.length > 0 && (
+              <div className="border rounded-lg p-4 mt-4 max-h-[200px] overflow-y-auto">
+                <div className="text-sm font-medium mb-2">Results:</div>
+                <div className="space-y-2">
+                  {results.map((result, index) => (
+                    <div key={index} className={`text-sm p-2 rounded ${result.success ? 'bg-green-50' : 'bg-red-50'}`}>
+                      <div className="flex justify-between items-center">
+                        <div className="font-medium truncate max-w-[70%]">
+                          {result.success ? '✅' : '❌'} {result.name || 'Unnamed'}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {result.platform}
+                        </div>
+                      </div>
+                      <div className="text-xs truncate">{result.destination}</div>
+                      {result.success && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <div className="bg-primary-100 text-primary-800 text-xs font-mono px-2 py-1 rounded">
+                            {window.location.origin}/{result.trackingId}
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/${result.trackingId}`);
+                              toast({
+                                title: "Copied!",
+                                description: "Link copied to clipboard",
+                              });
+                            }}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      )}
+                      {!result.success && (
+                        <div className="text-xs text-red-600 mt-1">{result.error}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Footer */}
+          <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
+            {results.length > 0 && (
+              <Button 
+                variant="outline" 
+                onClick={handleCopyResults}
+                className="w-full sm:w-auto"
+              >
+                Copy All Results
+              </Button>
+            )}
             <Button 
               variant="outline" 
-              onClick={handleCopyResults}
-              className="w-full sm:w-auto"
+              onClick={() => setShowBulkLinkModal(false)}
+              className="w-full sm:w-auto order-last sm:order-none"
             >
-              Copy All Results
+              Close
             </Button>
-          )}
-          <Button 
-            variant="outline" 
-            onClick={() => setShowBulkLinkModal(false)}
-            className="w-full sm:w-auto order-last sm:order-none"
-          >
-            Close
-          </Button>
-          <Button 
-            onClick={handleProcessUrls}
-            disabled={isProcessing || !urls.trim()}
-            className="bg-primary-600 text-white hover:bg-primary-700 font-semibold w-full sm:w-auto"
-            size="lg"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Process URLs"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <Button 
+              onClick={handleProcessUrls}
+              disabled={isProcessing || !urls.trim()}
+              className="bg-primary-600 text-white hover:bg-primary-700 font-semibold w-full sm:w-auto"
+              size="lg"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Process URLs"
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
