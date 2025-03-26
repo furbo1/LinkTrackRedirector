@@ -59,9 +59,14 @@ function App() {
   const [showNewLinkModal, setShowNewLinkModal] = useState(false);
   const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
   
-  // Initialize the modal closed
+  // Initialize the modals closed
   const openNewLinkModal = () => {
     setShowNewLinkModal(true);
+  };
+  
+  const openBulkLinkModal = () => {
+    console.log("App.tsx: Opening Bulk Link Modal");
+    setShowBulkLinkModal(true);
   };
   
   const contextValue: AppContextType = {

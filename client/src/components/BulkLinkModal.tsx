@@ -153,6 +153,9 @@ export default function BulkLinkModal() {
       });
   };
 
+  // Add a debug log to verify modal state
+  console.log("BulkLinkModal rendering, modal is:", showBulkLinkModal ? "open" : "closed");
+  
   return (
     <Dialog open={showBulkLinkModal} onOpenChange={setShowBulkLinkModal}>
       <DialogContent className="sm:max-w-2xl bg-white border-2 border-primary-200">
