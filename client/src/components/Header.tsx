@@ -1,7 +1,9 @@
 import React, { useContext } from "react";
 import { AppContext } from "@/App";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +16,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Header() {
   const { isNavOpen, setIsNavOpen, currentView, setCurrentView } = useContext(AppContext);
+  const { logout } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+  };
 
   return (
     <header className="bg-white shadow-sm">
@@ -24,7 +36,7 @@ export default function Header() {
               <svg className="h-8 w-8 text-primary-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              <span className="ml-2 text-xl font-bold text-gray-900">LinkTracker</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">DLZZ.pro</span>
             </div>
           </div>
           
@@ -35,7 +47,7 @@ export default function Header() {
                   <Button variant="ghost" className="p-0 rounded-full">
                     <span className="sr-only">Open user menu</span>
                     <Avatar className="h-8 w-8 bg-primary-700 text-white">
-                      <AvatarFallback>JD</AvatarFallback>
+                      <AvatarFallback>AR</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -43,6 +55,10 @@ export default function Header() {
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setCurrentView("settings")}>Settings</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -100,6 +116,17 @@ export default function Header() {
               }}
             >
               Settings
+            </Button>
+            <Button 
+              variant="ghost"
+              className="w-full justify-start text-red-600"
+              onClick={() => { 
+                handleLogout();
+                setIsNavOpen(false);
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
             </Button>
           </div>
         </div>
