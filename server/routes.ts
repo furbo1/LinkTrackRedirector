@@ -7,31 +7,136 @@ import * as cheerio from "cheerio";
 // Function to fetch Open Graph data from a URL
 async function fetchOpenGraphData(url: string) {
   try {
+    console.log(`Beginning detailed fetch for ${url}`);
     const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5"
-      },
-      timeout: 8000 // 8 second timeout to allow more time for complex pages
+      }
     });
     
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    // Extract Open Graph data with fallbacks
-    const ogTitle = $('meta[property="og:title"]').attr('content') || 
+    // First try to get the actual product title and specific product data
+    // This might be different from the page title or OG title which often contains site name
+    let productTitle = null;
+    let productDesc = null;
+    
+    // Special handling for Temu
+    if (url.toLowerCase().includes('temu')) {
+      console.log(`Using Temu specific selectors for ${url}`);
+      
+      // Try to find product name in common Temu selectors
+      const temuProductNameSelectors = [
+        '.pdp-info-box .title', 
+        '.pdp-name',
+        '.ProductName',
+        '.product-title',
+        '.goods-name',
+        'h1.name',
+        '.pdp-title',
+        '[data-testid="product-name"]'
+      ];
+      
+      for (const selector of temuProductNameSelectors) {
+        const nameText = $(selector).first().text().trim();
+        if (nameText && nameText.length > 5) {
+          productTitle = nameText;
+          console.log(`Found Temu product name: ${productTitle}`);
+          break;
+        }
+      }
+      
+      // Try to find product description in common Temu selectors
+      const temuDescSelectors = [
+        '.product-description',
+        '.pdp-description',
+        '.goods-desc',
+        '.pdp-detail',
+        '.product-details'
+      ];
+      
+      for (const selector of temuDescSelectors) {
+        const descText = $(selector).first().text().trim();
+        if (descText && descText.length > 10) {
+          productDesc = descText;
+          console.log(`Found Temu product description`);
+          break;
+        }
+      }
+    }
+    
+    // Special handling for Amazon
+    else if (url.toLowerCase().includes('amazon') || url.toLowerCase().includes('amzn')) {
+      console.log(`Using Amazon specific selectors for ${url}`);
+      
+      // Try Amazon specific product title selectors
+      const amazonTitleSelectors = [
+        '#productTitle',
+        '.product-title',
+        '.a-size-large.product-title-word-break',
+        '[data-feature-name="title"]',
+        'h1.a-size-large'
+      ];
+      
+      for (const selector of amazonTitleSelectors) {
+        const titleText = $(selector).first().text().trim();
+        if (titleText && titleText.length > 5) {
+          productTitle = titleText;
+          console.log(`Found Amazon product title: ${productTitle}`);
+          break;
+        }
+      }
+      
+      // Try Amazon specific description selectors
+      const amazonDescSelectors = [
+        '#productDescription p',
+        '.a-expander-content p',
+        '#feature-bullets .a-list-item',
+        '.a-spacing-small.a-spacing-top-small div',
+        '[data-feature-name="featurebullets"] li'
+      ];
+      
+      // For Amazon, combine bullet points as description if available
+      let bulletPoints = '';
+      $('#feature-bullets .a-list-item').each((i, el) => {
+        bulletPoints += '• ' + $(el).text().trim() + ' ';
+      });
+      
+      if (bulletPoints.length > 10) {
+        productDesc = bulletPoints.substring(0, 300) + (bulletPoints.length > 300 ? '...' : '');
+        console.log(`Found Amazon bullet points for description`);
+      } else {
+        for (const selector of amazonDescSelectors) {
+          const descText = $(selector).first().text().trim();
+          if (descText && descText.length > 10) {
+            productDesc = descText;
+            console.log(`Found Amazon product description`);
+            break;
+          }
+        }
+      }
+    }
+    
+    // Fallback to Open Graph/meta data if we didn't find specific product data
+    const ogTitle = productTitle || 
+                    $('meta[property="og:title"]').attr('content') || 
                     $('meta[name="twitter:title"]').attr('content') ||
                     $('title').text() || 
                     $('meta[name="title"]').attr('content') ||
                     $('h1').first().text();
+    
+    console.log(`Final title: ${ogTitle}`);
                     
-    // Enhanced description extraction - try multiple sources
-    let ogDescription = $('meta[property="og:description"]').attr('content') || 
+    // Enhanced description extraction
+    let ogDescription = productDesc ||
+                        $('meta[property="og:description"]').attr('content') || 
                         $('meta[name="twitter:description"]').attr('content') ||
                         $('meta[name="description"]').attr('content');
     
-    // If no description found, try to extract from product description elements
+    // If no description found, try to extract from generic product description elements
     if (!ogDescription) {
       // Common product description elements
       const possibleDescriptionSelectors = [
@@ -65,17 +170,63 @@ async function fetchOpenGraphData(url: string) {
     if (ogDescription && ogDescription.length > 300) {
       ogDescription = ogDescription.substring(0, 297) + '...';
     }
+    
+    console.log(`Final description: ${ogDescription?.substring(0, 50)}...`);
                           
+    // Get image URL
     const ogImage = $('meta[property="og:image"]').attr('content') || 
                     $('meta[property="og:image:url"]').attr('content') ||
                     $('meta[name="twitter:image"]').attr('content') ||
                     $('link[rel="image_src"]').attr('href');
                     
-    // Enhanced price extraction
-    let ogPrice = $('meta[property="og:price:amount"]').attr('content') || 
-                  $('meta[property="product:price:amount"]').attr('content');
-                  
-    // If no meta price, try to find price in the content
+    // Enhanced price extraction - try platform specific selectors first
+    let ogPrice = null;
+    
+    if (url.toLowerCase().includes('temu')) {
+      // Temu specific price selectors
+      const temuPriceSelectors = [
+        '.pdp-price',
+        '.price-current',
+        '.product-price',
+        '.current-price',
+        '[data-testid="price"]'
+      ];
+      
+      for (const selector of temuPriceSelectors) {
+        const priceText = $(selector).first().text().trim();
+        if (priceText && /\$?\d+(\.\d{2})?/.test(priceText)) {
+          ogPrice = priceText.match(/\$?\d+(\.\d{2})?/)?.[0] || null;
+          console.log(`Found Temu price: ${ogPrice}`);
+          break;
+        }
+      }
+    } else if (url.toLowerCase().includes('amazon') || url.toLowerCase().includes('amzn')) {
+      // Amazon specific price selectors
+      const amazonPriceSelectors = [
+        '.a-price .a-offscreen',
+        '#priceblock_ourprice',
+        '#priceblock_dealprice',
+        '.a-color-price',
+        '[data-a-color="price"] .a-offscreen'
+      ];
+      
+      for (const selector of amazonPriceSelectors) {
+        const priceText = $(selector).first().text().trim();
+        if (priceText && /\$?\d+(\.\d{2})?/.test(priceText)) {
+          ogPrice = priceText.match(/\$?\d+(\.\d{2})?/)?.[0] || null;
+          console.log(`Found Amazon price: ${ogPrice}`);
+          break;
+        }
+      }
+    }
+    
+    // Fallback to meta tags if we didn't find platform-specific prices
+    if (!ogPrice) {
+      ogPrice = $('meta[property="og:price:amount"]').attr('content') || 
+                $('meta[property="product:price:amount"]').attr('content');
+    }
+    
+    // If still no price, use generic selectors
     if (!ogPrice) {
       const priceSelectors = [
         '.price', '#price', '.product-price', '.prod-price', 
@@ -91,6 +242,8 @@ async function fetchOpenGraphData(url: string) {
         }
       }
     }
+    
+    console.log(`Final price: ${ogPrice}`);
     
     return {
       title: ogTitle || null,

@@ -192,12 +192,11 @@ https://www.temu.com/product3.html"
                               {result.platform}
                             </div>
                           </div>
-                          <div className="text-xs truncate">{result.destination}</div>
                           
-                          {/* Product Details Box - Always displayed for successful links */}
+                          {/* Product Details Box - Moved ABOVE the original URL */}
                           {result.success && (
-                            <div className="mt-2 p-2 bg-white border border-gray-200 rounded shadow-sm">
-                              <div className="font-medium text-sm text-blue-800 mb-1">Product Details:</div>
+                            <div className="mt-2 mb-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                              <div className="font-medium text-sm text-blue-800 border-b border-blue-100 pb-1 mb-2">Product Details:</div>
                               
                               {/* Product Title */}
                               {result.ogTitle && (
@@ -248,6 +247,12 @@ https://www.temu.com/product3.html"
                               )}
                             </div>
                           )}
+                          
+                          {/* Original URL moved BELOW product details */}
+                          <div className="text-xs text-gray-500">
+                            <span className="font-medium">Original URL: </span>
+                            <span className="break-all">{result.destination}</span>
+                          </div>
                           {result.success && (
                             <div className="mt-1 flex items-center gap-2">
                               <div className="bg-primary-100 text-primary-800 text-xs font-mono px-2 py-1 rounded">
