@@ -96,8 +96,21 @@ export default function BulkLinkButton() {
   // Handle copy all results
   const handleCopyResults = () => {
     const textToCopy = results
-      .map(r => `${r.success ? '✅' : '❌'} ${r.destination} -> ${window.location.origin}/${r.trackingId}`)
-      .join('\n');
+      .map(r => {
+        // Format product description text with product details for successful links
+        let productDetails = '';
+        if (r.success) {
+          if (r.ogTitle) productDetails += `\n   Title: ${r.ogTitle}`;
+          if (r.ogDescription) productDetails += `\n   Description: ${r.ogDescription}`;
+          if (r.ogPrice) productDetails += `\n   Price: ${r.ogPrice}`;
+          
+          // Add tracking link
+          productDetails += `\n   Track link: ${window.location.origin}/${r.trackingId}`;
+        }
+        
+        return `${r.success ? '✅' : '❌'} ${r.platform} - ${r.name}${productDetails}`;
+      })
+      .join('\n\n');
     
     navigator.clipboard.writeText(textToCopy)
       .then(() => {
@@ -122,7 +135,7 @@ export default function BulkLinkButton() {
         onClick={openModal}
         variant="default"
         size="lg"
-        className="bg-gradient-to-r from-blue-500 to-primary-600 text-white hover:from-blue-600 hover:to-primary-700 flex items-center gap-2 font-bold px-8 py-3 text-lg shadow-lg border-2 border-blue-400 rounded-lg transition-all hover:scale-105"
+        className="bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 font-bold px-8 py-3 text-lg shadow-lg border-2 border-white rounded-lg transition-all hover:scale-105"
       >
         <FileUp className="h-6 w-6 mr-2" />
         <span>BULK CONVERT</span>
@@ -175,19 +188,44 @@ https://www.temu.com/product3.html"
                             <div className="font-medium truncate max-w-[70%]">
                               {result.success ? '✅' : '❌'} {result.name || 'Unnamed'}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-800">
                               {result.platform}
                             </div>
                           </div>
                           <div className="text-xs truncate">{result.destination}</div>
-                          {result.ogDescription && (
-                            <div className="mt-1 text-xs text-gray-700 italic">
-                              Description: {result.ogDescription}
-                            </div>
-                          )}
-                          {result.ogTitle && !result.ogDescription && (
-                            <div className="mt-1 text-xs text-gray-700 italic">
-                              Title: {result.ogTitle}
+                          
+                          {/* Product Details Box - Always displayed for successful links */}
+                          {result.success && (
+                            <div className="mt-2 p-2 bg-white border border-gray-200 rounded shadow-sm">
+                              <div className="font-medium text-sm text-blue-800 mb-1">Product Details:</div>
+                              
+                              {/* Product Title */}
+                              {result.ogTitle && (
+                                <div className="text-sm font-semibold">
+                                  {result.ogTitle}
+                                </div>
+                              )}
+                              
+                              {/* Product Description */}
+                              {result.ogDescription && (
+                                <div className="mt-1 text-xs text-gray-700">
+                                  {result.ogDescription}
+                                </div>
+                              )}
+                              
+                              {/* If no title or description, show a message */}
+                              {!result.ogTitle && !result.ogDescription && (
+                                <div className="text-xs text-gray-500 italic">
+                                  No product details available yet. Details will be updated automatically.
+                                </div>
+                              )}
+                              
+                              {/* Product Price if available */}
+                              {result.ogPrice && (
+                                <div className="mt-1 text-sm font-bold text-green-700">
+                                  Price: {result.ogPrice}
+                                </div>
+                              )}
                             </div>
                           )}
                           {result.success && (
@@ -242,7 +280,7 @@ https://www.temu.com/product3.html"
                 <Button 
                   onClick={handleProcessUrls}
                   disabled={isProcessing || !urls.trim()}
-                  className="bg-primary-600 text-white hover:bg-primary-700 font-semibold w-full sm:w-auto"
+                  className="bg-blue-600 text-white hover:bg-blue-700 font-semibold w-full sm:w-auto shadow-md border-2 border-blue-500"
                   size="lg"
                 >
                   {isProcessing ? (
