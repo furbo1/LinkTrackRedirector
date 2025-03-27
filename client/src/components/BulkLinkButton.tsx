@@ -249,29 +249,77 @@ https://www.temu.com/product3.html"
                           )}
                           
                           {/* Original URL moved BELOW product details */}
-                          <div className="text-xs text-gray-500">
-                            <span className="font-medium">Original URL: </span>
-                            <span className="break-all">{result.destination}</span>
+                          <div className="text-xs text-gray-500 mb-2">
+                            <div className="mb-1">
+                              <span className="font-medium">Original URL: </span>
+                              <span className="break-all">{result.destination}</span>
+                            </div>
+                            
+                            {/* Show URL domain details */}
+                            {result.success && (() => {
+                              try {
+                                const url = new URL(result.destination);
+                                return (
+                                  <div className="pl-2 text-xs text-gray-500 border-l-2 border-gray-200">
+                                    <div>Domain: <span className="font-mono">{url.hostname}</span></div>
+                                    <div>Path: <span className="font-mono">{url.pathname}</span></div>
+                                  </div>
+                                );
+                              } catch {
+                                return null;
+                              }
+                            })()}
                           </div>
+                          
                           {result.success && (
-                            <div className="mt-1 flex items-center gap-2">
-                              <div className="bg-primary-100 text-primary-800 text-xs font-mono px-2 py-1 rounded">
-                                {window.location.origin}/{result.trackingId}
+                            <div className="flex flex-col gap-2">
+                              {/* Link Transformation Visualization */}
+                              <div className="flex items-center gap-2 text-xs text-gray-600 my-1">
+                                <div className="flex-1 px-2 py-1 bg-gray-100 rounded truncate font-mono">
+                                  {result.destination.substring(0, 30)}...
+                                </div>
+                                <div className="flex-shrink-0">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-blue-500">
+                                    <path d="M5 12h14"></path>
+                                    <path d="m12 5 7 7-7 7"></path>
+                                  </svg>
+                                </div>
+                                <div className="flex-shrink-0 px-2 py-1 bg-blue-100 text-blue-800 font-bold rounded">
+                                  {window.location.origin}/<span className="underline">{result.trackingId}</span>
+                                </div>
                               </div>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-6 px-2"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(`${window.location.origin}/${result.trackingId}`);
-                                  toast({
-                                    title: "Copied!",
-                                    description: "Link copied to clipboard",
-                                  });
-                                }}
-                              >
-                                Copy
-                              </Button>
+                              
+                              {/* Explain the tracking ID */}
+                              <div className="text-xs text-gray-500 pl-2 border-l-2 border-blue-200">
+                                <span className="font-medium">Tracking ID:</span> {result.trackingId} 
+                                {result.trackingId && result.trackingId.length > 0 && (
+                                  <span className="ml-2">
+                                    (<span className="text-blue-600 font-mono">{result.trackingId.charAt(0)}</span> = platform, 
+                                    <span className="text-green-600 font-mono"> {result.trackingId.substring(1)}</span> = unique ID)
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Copy Button */}
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="bg-primary-100 text-primary-800 text-xs font-mono px-2 py-1 rounded w-auto truncate">
+                                  {window.location.origin}/{result.trackingId}
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-6 px-2"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/${result.trackingId}`);
+                                    toast({
+                                      title: "Copied!",
+                                      description: "Link copied to clipboard",
+                                    });
+                                  }}
+                                >
+                                  Copy
+                                </Button>
+                              </div>
                             </div>
                           )}
                           {!result.success && (

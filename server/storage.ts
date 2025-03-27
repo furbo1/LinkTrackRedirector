@@ -33,12 +33,31 @@ export class MemStorage implements IStorage {
   // Link methods
   async createLink(linkData: Omit<InsertLink, "trackingId">): Promise<Link> {
     const id = this.linkIdCounter++;
-    const trackingId = nanoid(5); // Generate a unique 5-character ID, shorter and cleaner
+    
+    // Generate a shorter tracking ID (just 3 characters) using a custom alphabet that excludes confusing characters
+    const customAlphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz'; // Removed 0, O, o, 1, I, l
+    const trackingId = Array.from({length: 3}, () => customAlphabet.charAt(Math.floor(Math.random() * customAlphabet.length))).join('');
+    
+    // Get platform hint character (first character of platform, or first character of destination)
+    let platformHint = '';
+    if (linkData.platform && linkData.platform.length > 0) {
+      platformHint = linkData.platform.charAt(0).toLowerCase();
+    } else {
+      try {
+        const url = new URL(linkData.destination);
+        platformHint = url.hostname.charAt(0).toLowerCase();
+      } catch (e) {
+        platformHint = 'x'; // fallback
+      }
+    }
+    
+    // Final tracking ID: platform hint + 3 random chars (total: 4 chars)
+    const finalTrackingId = platformHint + trackingId;
     const now = new Date();
     
     const link: Link = {
       id,
-      trackingId,
+      trackingId: finalTrackingId,
       name: linkData.name,
       destination: linkData.destination,
       platform: linkData.platform,
