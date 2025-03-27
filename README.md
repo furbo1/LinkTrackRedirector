@@ -4,40 +4,37 @@ A comprehensive link tracking and redirect service that enables tracking of clic
 
 ## Deployment Instructions
 
-### Deploying to Vercel (Recommended - Free)
+### Deploying to Firebase (Recommended)
 
-1. Sign up for a free account at [Vercel](https://vercel.com/)
+Since we're already using Firebase for authentication, deploying to Firebase Hosting with Firebase Functions gives us an integrated solution.
 
-2. Install the Vercel CLI:
+1. Install the Firebase CLI:
    ```
-   npm install -g vercel
-   ```
-
-3. Login to Vercel from the terminal:
-   ```
-   vercel login
+   npm install -g firebase-tools
    ```
 
-4. Deploy the application:
+2. Login to Firebase:
    ```
-   vercel
+   firebase login
+   ```
+
+3. Build the application:
+   ```
+   npm run build
+   ```
+
+4. Deploy to Firebase:
+   ```
+   firebase deploy
    ```
 
 5. Connect your custom domain:
-   - Go to your Vercel project dashboard
-   - Navigate to Settings > Domains
+   - In the Firebase Console, go to Hosting
+   - Click "Add custom domain"
    - Add your domain (dlzz.pro)
-   - Follow Vercel's instructions for setting up DNS
+   - Follow Firebase's instructions for DNS setup
 
-### Environment Variables
-
-Make sure to add the following environment variables in your Vercel project:
-
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_APP_ID`
-- `VITE_FIREBASE_PROJECT_ID`
-
-These environment variables are necessary for Firebase authentication to work properly.
+For more detailed instructions, see the FIREBASE_DEPLOYMENT.md file.
 
 ## Local Development
 
