@@ -9,11 +9,19 @@ export function ProtectedRoute({
   path: string;
   component: React.ComponentType;
 }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   return (
     <Route path={path}>
-      {isAuthenticated ? <Component /> : <Redirect to="/auth" />}
+      {loading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      ) : isAuthenticated ? (
+        <Component />
+      ) : (
+        <Redirect to="/auth" />
+      )}
     </Route>
   );
 }

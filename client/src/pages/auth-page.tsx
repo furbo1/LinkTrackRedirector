@@ -13,81 +13,54 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const [location, setLocation] = useLocation();
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, login, loading } = useAuth();
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
-  const [isCodeSent, setIsCodeSent] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [email, setEmail] = useState("alexcocan@gmail.com");
+  const [password, setPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !loading) {
       setLocation("/");
     }
-  }, [isAuthenticated, setLocation]);
+  }, [isAuthenticated, loading, setLocation]);
 
-  const handleSendCode = async () => {
-    // Validate email
-    if (!email.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter your email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // For now, only allow owner's email
-    if (email.toLowerCase() !== "al_razvan@yahoo.com") {
-      toast({
-        title: "Access Denied",
-        description: "This application is restricted to authorized users only.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSending(true);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // Simulate sending verification code
-    setTimeout(() => {
-      setIsSending(false);
-      setIsCodeSent(true);
-      toast({
-        title: "Verification Code Sent",
-        description: "A verification code has been sent to your email.",
-      });
-    }, 1500);
-  };
-
-  const handleVerifyCode = async () => {
-    if (!verificationCode.trim()) {
+    // Validate inputs
+    if (!email.trim() || !password.trim()) {
       toast({
         title: "Error",
-        description: "Please enter the verification code.",
+        description: "Please enter both email and password.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsVerifying(true);
-
-    // Simulate verification (accept any code for now)
-    setTimeout(() => {
-      setIsVerifying(false);
-      login();
-      toast({
-        title: "Success",
-        description: "You have been logged in successfully.",
-      });
-      setLocation("/");
-    }, 1500);
+    try {
+      setIsLoggingIn(true);
+      await login(email, password);
+      // Successful login is handled by the AuthContext (redirects to home)
+    } catch (error) {
+      // Error handling is done in the AuthContext
+      setIsLoggingIn(false);
+    }
   };
+
+  // Show loading spinner while checking authentication state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-100 p-4">
@@ -97,70 +70,55 @@ export default function AuthPage() {
           <CardHeader>
             <CardTitle className="text-2xl font-bold">DLZZ.pro - Link Tracker</CardTitle>
             <CardDescription>
-              {isCodeSent 
-                ? "Enter the verification code sent to your email" 
-                : "Sign in to access your link tracking dashboard"}
+              Sign in to access your link tracking dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!isCodeSent ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoggingIn}
+                  autoComplete="email"
+                />
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="code">Verification Code</Label>
-                  <Input
-                    id="code"
-                    type="text"
-                    placeholder="Enter code"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoggingIn}
+                  autoComplete="current-password"
+                />
               </div>
-            )}
+              <Button 
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2" 
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </form>
           </CardContent>
           <CardFooter>
-            <div className="w-full">
-              {!isCodeSent ? (
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                  onClick={handleSendCode}
-                  disabled={isSending}
-                >
-                  {isSending ? "Sending..." : "Send Verification Code"}
-                </Button>
-              ) : (
-                <div className="space-y-2 w-full">
-                  <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                    onClick={handleVerifyCode}
-                    disabled={isVerifying}
-                  >
-                    {isVerifying ? "Verifying..." : "Verify Code"}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full" 
-                    onClick={() => setIsCodeSent(false)}
-                    disabled={isVerifying}
-                  >
-                    Back to Email
-                  </Button>
-                </div>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Note: This dashboard is restricted to authorized users only.
+            </p>
           </CardFooter>
         </Card>
 

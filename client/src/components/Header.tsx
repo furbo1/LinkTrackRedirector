@@ -16,15 +16,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Header() {
   const { isNavOpen, setIsNavOpen, currentView, setCurrentView } = useContext(AppContext);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully.",
-    });
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Toast is now handled in the AuthContext
+    } catch (error) {
+      // Error handling is done in the AuthContext
+    }
   };
 
   return (
@@ -47,12 +48,14 @@ export default function Header() {
                   <Button variant="ghost" className="p-0 rounded-full">
                     <span className="sr-only">Open user menu</span>
                     <Avatar className="h-8 w-8 bg-primary-700 text-white">
-                      <AvatarFallback>AR</AvatarFallback>
+                      <AvatarFallback>
+                        {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel>{user?.email || 'My Account'}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setCurrentView("settings")}>Settings</DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600">
