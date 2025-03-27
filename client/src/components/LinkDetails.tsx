@@ -114,12 +114,58 @@ export default function LinkDetails() {
               <dd className="mt-1 text-sm text-gray-900 font-mono break-all">
                 <span>{shortUrl}</span>
               </dd>
+              
+              {/* Link Relationship Visualization */}
+              <div className="mt-3 mb-2 bg-gray-50 p-3 rounded-md border border-gray-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex-1 px-2 py-1 bg-gray-100 rounded truncate font-mono text-xs">
+                    {selectedLink.destination.substring(0, 40)}...
+                  </div>
+                  <div className="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                      <path d="M5 12h14"></path>
+                      <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                  </div>
+                  <div className="flex-shrink-0 px-2 py-1 bg-blue-100 text-blue-800 font-bold rounded text-xs">
+                    {window.location.origin}/<span className="underline">{selectedLink.trackingId}</span>
+                  </div>
+                </div>
+                
+                {/* Tracking ID explanation */}
+                <div className="text-xs pl-2 border-l-2 border-blue-200">
+                  <span className="font-medium">Tracking ID:</span> {selectedLink.trackingId} 
+                  {selectedLink.trackingId && selectedLink.trackingId.length > 0 && (
+                    <span className="ml-2">
+                      (<span className="text-blue-600 font-mono">{selectedLink.trackingId.charAt(0)}</span> = platform identifier, 
+                      <span className="text-green-600 font-mono"> {selectedLink.trackingId.substring(1)}</span> = unique tracking code)
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-gray-500">Destination URL</dt>
               <dd className="mt-1 text-sm text-gray-900 font-mono break-all">
                 <span>{selectedLink.destination}</span>
               </dd>
+              
+              {/* URL Details */}
+              <div className="mt-1 pl-3 border-l-2 border-gray-200 text-xs text-gray-500">
+                {(() => {
+                  try {
+                    const url = new URL(selectedLink.destination);
+                    return (
+                      <>
+                        <div className="mb-1">Domain: <span className="font-mono">{url.hostname}</span></div>
+                        <div>Path: <span className="font-mono">{url.pathname}</span></div>
+                      </>
+                    );
+                  } catch {
+                    return null;
+                  }
+                })()}
+              </div>
             </div>
           </dl>
         </div>

@@ -156,6 +156,42 @@ export default function NewLinkModal() {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              The platform selection determines the first character of your tracking ID 
+              (<span className="text-blue-600 font-mono">t</span> for Temu, 
+              <span className="text-blue-600 font-mono"> a</span> for Amazon, 
+              <span className="text-blue-600 font-mono"> o</span> for other).
+            </p>
+          </div>
+          
+          {/* URL Format Preview */}
+          <div className="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+            <div className="text-sm text-gray-700 font-medium mb-2">URL Format Preview</div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex-1 px-2 py-1 bg-gray-100 rounded truncate font-mono text-xs">
+                {linkData.destination ? `${linkData.destination.substring(0, 25)}...` : 'https://example.com/product...'}
+              </div>
+              <div className="flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                  <path d="M5 12h14"></path>
+                  <path d="m12 5 7 7-7 7"></path>
+                </svg>
+              </div>
+              <div className="flex-shrink-0 px-2 py-1 bg-blue-100 text-blue-800 font-bold rounded text-xs">
+                {window.location.origin}/<span className="underline text-blue-600">{linkData.platform.charAt(0)}</span><span className="text-green-600">xxx</span>
+              </div>
+            </div>
+            
+            {/* Tracking ID explanation */}
+            <div className="text-xs text-gray-500 pl-2 border-l-2 border-blue-200">
+              <span className="font-medium">Format:</span> 
+              <span className="ml-1 text-blue-600 font-mono">{linkData.platform.charAt(0)}</span>
+              <span className="text-gray-400 mx-1">=</span>
+              <span>platform,</span>
+              <span className="ml-1 text-green-600 font-mono">xxx</span>
+              <span className="text-gray-400 mx-1">=</span>
+              <span>unique ID</span>
+            </div>
           </div>
         </div>
         

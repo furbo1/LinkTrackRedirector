@@ -5,7 +5,12 @@ import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 
 // Function to fetch Open Graph data from a URL
-async function fetchOpenGraphData(url: string) {
+async function fetchOpenGraphData(url: string): Promise<{
+  title: string | null;
+  description: string | null;
+  image: string | null;
+  price: string | null | undefined;
+}> {
   try {
     console.log(`Beginning detailed fetch for ${url}`);
     const response = await fetch(url, {
@@ -320,7 +325,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Fetch Open Graph data
-      let ogData = {
+      let ogData: {
+        title: string | null;
+        description: string | null;
+        image: string | null;
+        price: string | null | undefined;
+      } = {
         title: null,
         description: null,
         image: null,
@@ -450,7 +460,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Fetch Open Graph data synchronously - for better user experience
           // Wait for OG data to be fetched first
           console.log(`Fetching OG data for ${url}...`);
-          let ogData = {
+          let ogData: {
+            title: string | null;
+            description: string | null;
+            image: string | null;
+            price: string | null | undefined;
+          } = {
             title: null,
             description: null,
             image: null,

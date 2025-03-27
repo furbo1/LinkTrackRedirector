@@ -80,16 +80,30 @@ export default function LinksTable() {
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <span className="font-mono text-xs mr-2">{`${window.location.origin}/${link.trackingId}`}</span>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-6 text-primary-600 hover:text-primary-900 text-xs p-0"
-                              onClick={() => copyToClipboard(`${window.location.origin}/${link.trackingId}`)}
-                            >
-                              Copy
-                            </Button>
+                          <div className="flex flex-col">
+                            <div className="flex items-center">
+                              <span className="font-mono text-xs mr-2 bg-blue-100 text-blue-800 px-2 py-1 rounded">{`${window.location.origin}/${link.trackingId}`}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 text-primary-600 hover:text-primary-900 text-xs p-0"
+                                onClick={() => copyToClipboard(`${window.location.origin}/${link.trackingId}`)}
+                              >
+                                Copy
+                              </Button>
+                            </div>
+                            {/* Tracking ID explanation */}
+                            {link.trackingId && link.trackingId.length > 0 && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                <span className="text-blue-600 font-mono">{link.trackingId.charAt(0)}</span>
+                                <span className="text-gray-400 mx-1">=</span>
+                                <span>platform</span>
+                                <span className="mx-1">•</span>
+                                <span className="text-green-600 font-mono">{link.trackingId.substring(1)}</span>
+                                <span className="text-gray-400 mx-1">=</span>
+                                <span>ID</span>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-mono truncate max-w-xs">
