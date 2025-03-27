@@ -556,8 +556,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Is this a bot/crawler requesting the page? (e.g., social media preview)
       const userAgent = req.headers["user-agent"] || "";
       
-      // Enhanced bot detection
-      const isBot = /bot|crawl|facebook|twitter|linkedin|pinterest|slack|discord|telegram|preview|fetch|curl|wget|headless|phantom|selenium|webdriver|chrome-lighthouse/i.test(userAgent);
+      // Check if request is for HTML content explicitly
+      const wantsHtml = req.headers.accept && 
+                       (req.headers.accept.includes("text/html") || 
+                        req.headers.accept.includes("application/xhtml+xml"));
+      
+      // Enhanced bot detection 
+      // Modified to exclude curl from bot detection when not requesting HTML
+      const botPattern = /bot|crawl|facebook|twitter|linkedin|pinterest|slack|discord|telegram|preview|fetch|wget|headless|phantom|selenium|webdriver|chrome-lighthouse/i;
+      const isApiRequest = req.headers.accept === "application/json";
+      const isCurl = /curl/i.test(userAgent) && !wantsHtml;
+      
+      // Mark as bot if matches bot pattern and not an API request
+      const isBot = botPattern.test(userAgent) && !isApiRequest && !isCurl;
       
       // Additional checks for automated requests
       const isAutomated = 
