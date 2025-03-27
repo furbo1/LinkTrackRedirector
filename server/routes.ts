@@ -294,56 +294,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Use default name
           }
           
-          // Create link with basic info first (faster than waiting for OG data)
+          // Fetch Open Graph data synchronously - for better user experience
+          // Wait for OG data to be fetched first
+          console.log(`Fetching OG data for ${url}...`);
+          let ogData = {
+            title: null,
+            description: null,
+            image: null,
+            price: null
+          };
+          
+          try {
+            ogData = await fetchOpenGraphData(url);
+            console.log(`Fetched OG data: ${JSON.stringify(ogData)}`);
+            
+            // Use title as name if available and current name is generic
+            if (ogData.title && name.includes("Product")) {
+              name = ogData.title.substring(0, 50); // Limit to 50 chars
+            }
+          } catch (e) {
+            console.error(`Error fetching OG data for ${url}:`, e);
+          }
+          
+          // Create link with all data
           const linkData = {
             name,
             destination: url,
-            platform
+            platform,
+            ogTitle: ogData.title,
+            ogDescription: ogData.description,
+            ogImage: ogData.image,
+            ogPrice: ogData.price
           };
           
           const link = await storage.createLink(linkData);
           
-          // Return success immediately
+          // Return success with OG data
           results.push({
             destination: url,
             platform,
             name,
             trackingId: link.trackingId,
             success: true,
-            ogTitle: link.ogTitle,
-            ogDescription: link.ogDescription,
-            ogImage: link.ogImage,
-            ogPrice: link.ogPrice
+            ogTitle: ogData.title,
+            ogDescription: ogData.description,
+            ogImage: ogData.image,
+            ogPrice: ogData.price
           });
-          
-          // Fetch Open Graph data in the background after response
-          // This avoids timeouts but still populates the metadata eventually
-          fetchOpenGraphData(url)
-            .then(async (ogData) => {
-              try {
-                // Manually update the link with OG data
-                // Since we don't have an updateLink method, we'll use the storage implementation directly
-                // In a production app with a database, you'd do a proper update here
-                const existingLink = await storage.getLinkById(link.id);
-                if (existingLink) {
-                  // For MemStorage, we can update directly
-                  if (storage instanceof MemStorage) {
-                    const linkData = storage.linksData.get(link.id);
-                    if (linkData) {
-                      linkData.ogTitle = ogData.title;
-                      linkData.ogDescription = ogData.description;
-                      linkData.ogImage = ogData.image;
-                      linkData.ogPrice = ogData.price;
-                    }
-                  }
-                }
-              } catch (e) {
-                console.error(`Failed to update link ${link.id} with OG data:`, e);
-              }
-            })
-            .catch((err) => {
-              console.error(`Failed to fetch OG data for ${url}:`, err);
-            });
           
         } catch (error) {
           console.error(`Error processing URL ${url}:`, error);

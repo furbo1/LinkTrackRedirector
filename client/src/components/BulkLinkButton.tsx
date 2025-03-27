@@ -213,10 +213,30 @@ https://www.temu.com/product3.html"
                                 </div>
                               )}
                               
-                              {/* If no title or description, show a message */}
+                              {/* If no title or description, try to extract info from URL */}
                               {!result.ogTitle && !result.ogDescription && (
-                                <div className="text-xs text-gray-500 italic">
-                                  No product details available yet. Details will be updated automatically.
+                                <div className="text-xs text-gray-700">
+                                  {(() => {
+                                    // Extract product info from URL if possible
+                                    try {
+                                      const url = new URL(result.destination);
+                                      const path = url.pathname;
+                                      
+                                      if (result.platform === 'temu') {
+                                        return `Temu Product: ${path.split('/').filter(Boolean).join(' - ')}`;
+                                      } else if (result.platform === 'amazon') {
+                                        return `Amazon Product: ${path.split('/').filter(Boolean).join(' - ')}`;
+                                      } else {
+                                        // For other platforms, extract what we can
+                                        const pathSegments = path.split('/').filter(Boolean);
+                                        return pathSegments.length > 0 
+                                          ? `Product from ${url.hostname}: ${pathSegments.join(' - ')}`
+                                          : `Product from ${url.hostname}`;
+                                      }
+                                    } catch {
+                                      return `Product from ${result.platform}`;
+                                    }
+                                  })()}
                                 </div>
                               )}
                               
