@@ -94,6 +94,8 @@
         cursor: pointer;
         border-radius: 4px 4px 0 0;
         margin-right: 5px;
+        -moz-user-select: none; /* Firefox specific */
+        user-select: none;
       }
       .tab.active {
         background-color: #4a3f9f;
@@ -218,6 +220,46 @@
         color: #0277bd;
         display: none;
       }
+      
+      /* Summary Statistics Styles */
+      .click-summary-stats {
+        margin-bottom: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        border: 1px solid #e9ecef;
+      }
+      .stats-summary-row {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+      .summary-stat-box {
+        flex: 1;
+        min-width: 120px;
+        background-color: white;
+        border-radius: 6px;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+      }
+      .summary-stat-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+      .summary-stat-label {
+        font-size: 0.85em;
+        color: #666;
+        margin-bottom: 5px;
+      }
+      .summary-stat-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #4a3f9f;
+      }
+      
       @media (max-width: 768px) {
         .filters-row {
           flex-direction: column;
@@ -382,13 +424,13 @@
       </div>
       
       <div class="tabs">
-        <div class="tab active" data-tab="single">Single URL</div>
+        <div class="tab" data-tab="single">Single URL</div>
         <div class="tab" data-tab="bulk">Bulk URLs</div>
-        <div class="tab" data-tab="stats">Statistics</div>
+        <div class="tab active" data-tab="stats">Statistics</div>
       </div>
       
       <!-- Single URL Shortening -->
-      <div id="single" class="tab-content active">
+      <div id="single" class="tab-content">
         <div class="card">
           <h2>Shorten URL</h2>
           <input type="url" id="url-input" placeholder="Enter URL to shorten (e.g. https://example.com)" />
@@ -427,9 +469,31 @@
       </div>
       
       <!-- Click Statistics -->
-      <div id="stats" class="tab-content">
+      <div id="stats" class="tab-content active">
         <div class="card">
           <h2>Click Statistics</h2>
+          
+          <!-- Summary statistics -->
+          <div class="click-summary-stats">
+            <div class="stats-summary-row">
+              <div class="summary-stat-box">
+                <div class="summary-stat-label">Today's Clicks</div>
+                <div class="summary-stat-value" id="daily-clicks-count">-</div>
+              </div>
+              <div class="summary-stat-box">
+                <div class="summary-stat-label">This Week's Clicks</div>
+                <div class="summary-stat-value" id="weekly-clicks-count">-</div>
+              </div>
+              <div class="summary-stat-box">
+                <div class="summary-stat-label">This Month's Clicks</div>
+                <div class="summary-stat-value" id="monthly-clicks-count">-</div>
+              </div>
+              <div class="summary-stat-box">
+                <div class="summary-stat-label">Year to Date Clicks</div>
+                <div class="summary-stat-value" id="ytd-clicks-count">-</div>
+              </div>
+            </div>
+          </div>
           
           <!-- Filters section -->
           <div id="stats-filters"></div>
@@ -519,21 +583,44 @@
         // Call the init function to setup tabs and other functionality
         if (typeof init === 'function') {
           init();
+          
+          // Load statistics by default
+          if (typeof loadClickStatistics === 'function') {
+            console.log('Loading click statistics on page load');
+            loadClickStatistics();
+          }
         } else {
           console.error('init function not found! Setting up basic functionality...');
           // Basic setup if init is not available
           document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
+            tab.addEventListener('click', function(e) {
+              e.preventDefault(); // Prevent default behavior
               const tabId = this.getAttribute('data-tab');
+              
+              if (!tabId) {
+                console.error('Missing data-tab attribute on tab element');
+                return;
+              }
+              
+              // Log for debugging
+              console.log('Tab clicked:', tabId);
               
               document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
               document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
               
               this.classList.add('active');
-              document.getElementById(tabId).classList.add('active');
               
-              if (tabId === 'stats' && typeof loadClickStatistics === 'function') {
-                loadClickStatistics();
+              const tabContent = document.getElementById(tabId);
+              if (tabContent) {
+                tabContent.classList.add('active');
+                
+                // Handle statistics tab special case
+                if (tabId === 'stats' && typeof loadClickStatistics === 'function') {
+                  console.log('Loading click statistics');
+                  loadClickStatistics();
+                }
+              } else {
+                console.error('Tab content not found for ID:', tabId);
               }
             });
           });

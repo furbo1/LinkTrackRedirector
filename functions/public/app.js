@@ -335,6 +335,9 @@ async function loadClickStatistics(filters = {}) {
     
     // Check for delete buttons after table is rendered
     setTimeout(checkDeleteButtonVisibility, 500);
+    
+    // Update summary statistics
+    updateSummaryStatistics(statsData);
   } catch (error) {
     console.error('Error loading statistics:', error);
     showError('Error loading statistics: ' + error.message);
@@ -1893,4 +1896,62 @@ function formatReferrer(referrer) {
   } catch (e) {
     return referrer.substring(0, 30) + (referrer.length > 30 ? '...' : '');
   }
+}
+
+// Update summary statistics
+function updateSummaryStatistics(stats) {
+  // Get elements
+  const dailyClicksElement = document.getElementById('daily-clicks-count');
+  const weeklyClicksElement = document.getElementById('weekly-clicks-count');
+  const monthlyClicksElement = document.getElementById('monthly-clicks-count');
+  const ytdClicksElement = document.getElementById('ytd-clicks-count');
+  
+  // Return if any element doesn't exist
+  if (!dailyClicksElement || !weeklyClicksElement || !monthlyClicksElement || !ytdClicksElement) {
+    return;
+  }
+  
+  // Get current date
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay()); // Start of current week (Sunday)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  
+  // Initialize counters
+  let dailyClicks = 0;
+  let weeklyClicks = 0;
+  let monthlyClicks = 0;
+  let ytdClicks = 0;
+  
+  // Process each stats object
+  stats.forEach(stat => {
+    // Sum up clicks for time periods if they have recentClicks data
+    if (stat.recentClicks && Array.isArray(stat.recentClicks)) {
+      stat.recentClicks.forEach(click => {
+        const clickTime = new Date(click.timestamp);
+        
+        // Count clicks for different time periods
+        if (clickTime >= today) {
+          dailyClicks++;
+        }
+        if (clickTime >= startOfWeek) {
+          weeklyClicks++;
+        }
+        if (clickTime >= startOfMonth) {
+          monthlyClicks++;
+        }
+        if (clickTime >= startOfYear) {
+          ytdClicks++;
+        }
+      });
+    }
+  });
+  
+  // Update the UI
+  dailyClicksElement.textContent = dailyClicks;
+  weeklyClicksElement.textContent = weeklyClicks;
+  monthlyClicksElement.textContent = monthlyClicks;
+  ytdClicksElement.textContent = ytdClicks;
 } 
