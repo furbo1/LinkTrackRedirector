@@ -1908,6 +1908,7 @@ function updateSummaryStatistics(stats) {
   
   // Return if any element doesn't exist
   if (!dailyClicksElement || !weeklyClicksElement || !monthlyClicksElement || !ytdClicksElement) {
+    console.log('Missing summary statistics elements');
     return;
   }
   
@@ -1919,6 +1920,13 @@ function updateSummaryStatistics(stats) {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfYear = new Date(now.getFullYear(), 0, 1);
   
+  console.log('Period dates:', { 
+    today: today.toISOString(), 
+    startOfWeek: startOfWeek.toISOString(), 
+    startOfMonth: startOfMonth.toISOString(), 
+    startOfYear: startOfYear.toISOString() 
+  });
+  
   // Initialize counters
   let dailyClicks = 0;
   let weeklyClicks = 0;
@@ -1926,32 +1934,125 @@ function updateSummaryStatistics(stats) {
   let ytdClicks = 0;
   
   // Process each stats object
-  stats.forEach(stat => {
-    // Sum up clicks for time periods if they have recentClicks data
-    if (stat.recentClicks && Array.isArray(stat.recentClicks)) {
-      stat.recentClicks.forEach(click => {
-        const clickTime = new Date(click.timestamp);
+  if (!stats || stats.length === 0) {
+    console.log('No statistics data to process for summary');
+  } else {
+    console.log(`Processing ${stats.length} stats entries for summary`);
+    
+    stats.forEach(stat => {
+      // Process with recentClicks data
+      if (stat.recentClicks && Array.isArray(stat.recentClicks) && stat.recentClicks.length > 0) {
+        console.log(`Processing ${stat.recentClicks.length} clicks for ${stat.shortCode}`);
         
-        // Count clicks for different time periods
-        if (clickTime >= today) {
-          dailyClicks++;
+        stat.recentClicks.forEach(click => {
+          if (!click.timestamp) {
+            console.log('Click missing timestamp:', click);
+            return;
+          }
+          
+          const clickTime = new Date(click.timestamp);
+          
+          // Count clicks for different time periods
+          if (clickTime >= today) {
+            dailyClicks++;
+          }
+          if (clickTime >= startOfWeek) {
+            weeklyClicks++;
+          }
+          if (clickTime >= startOfMonth) {
+            monthlyClicks++;
+          }
+          if (clickTime >= startOfYear) {
+            ytdClicks++;
+          }
+        });
+      } else {
+        // Alternative approach: Use dailyClickData if available
+        if (stat.dailyClickData) {
+          console.log(`Using dailyClickData for ${stat.shortCode}`);
+          
+          Object.entries(stat.dailyClickData).forEach(([dateStr, count]) => {
+            const clickDate = new Date(dateStr);
+            
+            if (isNaN(clickDate.getTime())) {
+              // Try to parse YYYY-MM-DD format manually
+              const parts = dateStr.split('-');
+              if (parts.length === 3) {
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                const clickDate = new Date(year, month, day);
+                
+                if (!isNaN(clickDate.getTime())) {
+                  if (clickDate.getTime() === today.getTime()) {
+                    dailyClicks += count;
+                  }
+                  if (clickDate >= startOfWeek) {
+                    weeklyClicks += count;
+                  }
+                  if (clickDate >= startOfMonth) {
+                    monthlyClicks += count;
+                  }
+                  if (clickDate >= startOfYear) {
+                    ytdClicks += count;
+                  }
+                }
+              }
+            } else {
+              // Date parsed correctly
+              if (clickDate.getTime() === today.getTime()) {
+                dailyClicks += count;
+              }
+              if (clickDate >= startOfWeek) {
+                weeklyClicks += count;
+              }
+              if (clickDate >= startOfMonth) {
+                monthlyClicks += count;
+              }
+              if (clickDate >= startOfYear) {
+                ytdClicks += count;
+              }
+            }
+          });
         }
-        if (clickTime >= startOfWeek) {
-          weeklyClicks++;
+        
+        // If we have a lastClickAt date and totalClicks, but no detailed data
+        // at least count it in the year-to-date if appropriate
+        if (stat.lastClickAt && stat.totalClicks && stat.totalClicks > 0) {
+          const lastClickTime = new Date(stat.lastClickAt);
+          if (lastClickTime >= startOfYear) {
+            // If we don't have detailed data, assume all clicks were recent
+            // This is an approximation, but better than showing 0
+            if (!stat.recentClicks && !stat.dailyClickData) {
+              console.log(`Using totalClicks (${stat.totalClicks}) for ${stat.shortCode}`);
+              ytdClicks += stat.totalClicks;
+              
+              // If last click was this month, count towards monthly
+              if (lastClickTime >= startOfMonth) {
+                monthlyClicks += stat.totalClicks;
+                
+                // If last click was this week, count towards weekly
+                if (lastClickTime >= startOfWeek) {
+                  weeklyClicks += stat.totalClicks;
+                  
+                  // If last click was today, count towards daily
+                  if (lastClickTime >= today) {
+                    dailyClicks += stat.totalClicks;
+                  }
+                }
+              }
+            }
+          }
         }
-        if (clickTime >= startOfMonth) {
-          monthlyClicks++;
-        }
-        if (clickTime >= startOfYear) {
-          ytdClicks++;
-        }
-      });
-    }
-  });
+      }
+    });
+  }
+  
+  console.log('Summary counts:', { dailyClicks, weeklyClicks, monthlyClicks, ytdClicks });
   
   // Update the UI
-  dailyClicksElement.textContent = dailyClicks;
-  weeklyClicksElement.textContent = weeklyClicks;
-  monthlyClicksElement.textContent = monthlyClicks;
-  ytdClicksElement.textContent = ytdClicks;
+  dailyClicksElement.textContent = dailyClicks || 0;
+  weeklyClicksElement.textContent = weeklyClicks || 0;
+  monthlyClicksElement.textContent = monthlyClicks || 0;
+  ytdClicksElement.textContent = ytdClicks || 0;
 } 
