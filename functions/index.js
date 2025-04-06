@@ -202,11 +202,10 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
     // Use server timestamp for consistency
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
     const now = new Date();
-    const day = now.toISOString().split('T')[0]; // YYYY-MM-DD format
-    const expiresAt = new Date(now.getTime() + DATA_RETENTION_PERIOD);
+    const day = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
     
     // Generate a unique ID for this click using timestamp and random string
-    const clickId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    const clickId = `${now.getTime()}-${Math.random().toString(36).substring(2, 10)}`;
     
     // Use country from Cloudflare if available, otherwise 'Unknown'
     let country = cfCountry || 'Unknown';
@@ -221,11 +220,11 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       referrer: referrer || null,
       ip: ip || null,
       country,
-      timestamp, // Use server timestamp
+      timestamp: timestamp,
       day,
       processed: true,
       createdAt: now,
-      expiresAt: expiresAt
+      expiresAt: new Date(now.getTime() + DATA_RETENTION_PERIOD)
     };
     
     // First try to write to Realtime Database
@@ -261,7 +260,7 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
             totalClicks: (summaryData.totalClicks || 0) + 1,
             lastClickAt: now.toISOString(),
             lastUpdated: now.toISOString(),
-            expiresAt: expiresAt.toISOString()
+            expiresAt: new Date(now.getTime() + DATA_RETENTION_PERIOD).toISOString()
           });
           console.log(`Updated summary for ${shortCode}`);
         } catch (summaryError) {
@@ -276,7 +275,7 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       // Continue to in-memory storage
     }
     
-    // If RTDB failed, store in memory
+    // If RTDB write failed, store in memory
     if (!rtdbSuccess) {
       console.log('Storing click in memory as fallback');
       
@@ -308,16 +307,17 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
     try {
       if (!global.inMemoryClicks) global.inMemoryClicks = [];
       
+      const now = new Date();
       global.inMemoryClicks.push({
         id: crypto.randomBytes(8).toString('hex'),
         shortCode,
         targetUrl: decodedUrl,
         country: cfCountry || 'Unknown',
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        day: new Date().toISOString().split('T')[0],
+        timestamp: now,
+        day: now.toISOString().split('T')[0],
         error: error.message,
         emergency: true,
-        expiresAt: new Date(new Date().getTime() + DATA_RETENTION_PERIOD).toISOString()
+        expiresAt: new Date(now.getTime() + DATA_RETENTION_PERIOD)
       });
       
       console.log(`Click stored in memory as emergency fallback. Total: ${global.inMemoryClicks.length}`);
