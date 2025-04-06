@@ -1800,8 +1800,8 @@ app.post('/api/auth/check', async (req, res) => {
   try {
     const { email, uid } = req.body;
     
-    // Set your authorized Google email here
-    const AUTHORIZED_EMAIL = 'alexcocan@gmail.com'; // Update this to your email!
+    // Get authorized email from environment variable
+    const AUTHORIZED_EMAIL = process.env.AUTHORIZED_EMAIL;
     
     // Check if the user's email is authorized
     const authorized = email === AUTHORIZED_EMAIL;
@@ -1834,8 +1834,8 @@ app.get('/api/auth/status', async (req, res) => {
     try {
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       
-      // Set your authorized email here (same as above)
-      const AUTHORIZED_EMAIL = 'alexcocan@gmail.com'; // Update this to your email!
+      // Get authorized email from environment variable
+      const AUTHORIZED_EMAIL = process.env.AUTHORIZED_EMAIL;
       
       // Check if the user is authorized
       const authorized = decodedToken.email === AUTHORIZED_EMAIL;
@@ -1883,8 +1883,8 @@ const requireAuth = async (req, res, next) => {
     try {
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       
-      // Set your authorized email here (same as above)
-      const AUTHORIZED_EMAIL = 'alexcocan@gmail.com'; // Update this to your email!
+      // Get authorized email from environment variable
+      const AUTHORIZED_EMAIL = process.env.AUTHORIZED_EMAIL;
       
       // Check if the user is authorized
       const authorized = decodedToken.email === AUTHORIZED_EMAIL;
@@ -2870,10 +2870,10 @@ function extractMetaContent(html, name) {
 }
 
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyCy4EDuCXkoCCMUfAMbAAnjcn6xdwhjg4o',
-  authDomain: "dlzz-pro-b1c80.firebaseapp.com",
-  projectId: "dlzz-pro-b1c80",
-  storageBucket: "dlzz-pro-b1c80.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abcdef1234567890"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
 };
