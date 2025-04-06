@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Delete Test - dls.sale</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #4a3f9f;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4a3f9f;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        #result {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 15px;
+            background-color: #f5f5f5;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow: auto;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .request-details {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>URL Delete Functionality Test</h1>
+    <p>This page helps diagnose issues with the URL deletion functionality.</p>
+    
+    <div class="test-section">
+        <h2>1. Create a Test URL</h2>
+        <p>First, create a test URL that we can delete later:</p>
+        <input type="url" id="url-input" placeholder="Enter a URL to shorten (e.g., https://example.com)">
+        <button id="create-btn">Create Short URL</button>
+        <div id="create-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test Delete Functionality</h2>
+        <p>Enter a short code to delete:</p>
+        <input type="text" id="shortcode-input" placeholder="Enter short code (e.g., abc123)">
+        <button id="delete-btn" class="delete-btn">Delete URL</button>
+        <div id="delete-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Fetch Tests</h2>
+        <p>Test different fetch configurations:</p>
+        <div>
+            <select id="fetch-method">
+                <option value="DELETE">DELETE</option>
+                <option value="POST">POST</option>
+                <option value="GET">GET</option>
+            </select>
+            <input type="text" id="fetch-url" value="/api/delete-url/" placeholder="API URL">
+            <button id="fetch-test-btn">Run Fetch Test</button>
+        </div>
+        <div id="fetch-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Browser Information</h2>
+        <div id="browser-info"></div>
+    </div>
+    
+    <script>
+        // Site configuration
+        const SITE_DOMAIN = 'dls.sale';
+        
+        // Display browser information
+        function displayBrowserInfo() {
+            const info = document.getElementById('browser-info');
+            info.innerHTML = `
+                <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+                <p><strong>Browser:</strong> ${getBrowserName()}</p>
+                <p><strong>Platform:</strong> ${navigator.platform}</p>
+            `;
+        }
+        
+        function getBrowserName() {
+            const ua = navigator.userAgent;
+            if (ua.indexOf("Firefox") > -1) return "Firefox";
+            if (ua.indexOf("Opera") > -1 || ua.indexOf("OPR") > -1) return "Opera";
+            if (ua.indexOf("Edge") > -1 || ua.indexOf("Edg") > -1) return "Edge";
+            if (ua.indexOf("Chrome") > -1) return "Chrome";
+            if (ua.indexOf("Safari") > -1) return "Safari";
+            return "Unknown";
+        }
+        
+        // Create a test URL
+        async function createTestUrl() {
+            const url = document.getElementById('url-input').value.trim();
+            const resultDiv = document.getElementById('create-result');
+            
+            if (!url) {
+                resultDiv.innerHTML = '<p class="error">Please enter a URL</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Creating short URL...</p>';
+            
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
+                    return;
+                }
+                
+                const shortCode = data.shortUrl.split('/').pop();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">URL shortened successfully!</p>
+                    <p><strong>Original URL:</strong> <a href="${data.originalUrl}" target="_blank">${data.originalUrl}</a></p>
+                    <p><strong>Short URL:</strong> <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a></p>
+                    <p><strong>Short Code:</strong> <span id="created-shortcode">${shortCode}</span> <button onclick="copyToShortCodeInput('${shortCode}')">Use This Code</button></p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">Error creating URL: ${error.message}</p>`;
+            }
+        }
+        
+        // Copy short code to delete input
+        function copyToShortCodeInput(shortCode) {
+            document.getElementById('shortcode-input').value = shortCode;
+        }
+        
+        // Test URL deletion
+        async function testDeleteUrl() {
+            const shortCode = document.getElementById('shortcode-input').value.trim();
+            const resultDiv = document.getElementById('delete-result');
+            
+            if (!shortCode) {
+                resultDiv.innerHTML = '<p class="error">Please enter a short code</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Attempting to delete URL...</p>';
+            
+            try {
+                // Record request time
+                const startTime = new Date();
+                
+                // Prepare and log request details
+                const url = `/api/delete-url/${shortCode}`;
+                const requestDetails = {
+                    method: 'DELETE',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                };
+                
+                console.log('Delete request:', url, requestDetails);
+                
+                // Make the request
+                const response = await fetch(url, requestDetails);
+                
+                // Calculate response time
+                const endTime = new Date();
+                const responseTime = endTime - startTime;
+                
+                // Get response as text first to log raw response
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                // Try to parse as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    data = { error: 'Invalid JSON response', raw: responseText };
+                }
+                
+                // Display results
+                let resultHTML = `
+                    <p><strong>Response Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Response Time:</strong> ${responseTime}ms</p>
+                `;
+                
+                if (response.ok) {
+                    if (data.success) {
+                        resultHTML += `<p class="success">${data.message}</p>`;
+                    } else if (data.error) {
+                        resultHTML += `<p class="error">API Error: ${data.error}</p>`;
+                    }
+                } else {
+                    resultHTML += `<p class="error">HTTP Error: ${response.status} ${response.statusText}</p>`;
+                    if (data.error) {
+                        resultHTML += `<p class="error">API Error: ${data.error}</p>`;
+                    }
+                }
+                
+                // Add request details
+                resultHTML += `
+                    <div class="request-details">
+                        <p><strong>Request Details:</strong></p>
+                        <pre>${JSON.stringify({
+                            url: url,
+                            method: requestDetails.method,
+                            headers: requestDetails.headers
+                        }, null, 2)}</pre>
+                        
+                        <p><strong>Response Headers:</strong></p>
+                        <pre>${formatHeaders(response.headers)}</pre>
+                        
+                        <p><strong>Response Body:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+                
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">Error: ${error.message}</p>
+                    <div class="request-details">
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Format headers for display
+        function formatHeaders(headers) {
+            let result = '';
+            headers.forEach((value, key) => {
+                result += `${key}: ${value}\n`;
+            });
+            return result;
+        }
+        
+        // Test different fetch configurations
+        async function testFetch() {
+            const method = document.getElementById('fetch-method').value;
+            const url = document.getElementById('fetch-url').value + document.getElementById('shortcode-input').value;
+            const resultDiv = document.getElementById('fetch-result');
+            
+            if (!document.getElementById('shortcode-input').value) {
+                resultDiv.innerHTML = '<p class="error">Please enter a short code first</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = `<p>Testing ${method} request to ${url}...</p>`;
+            
+            try {
+                // Record request time
+                const startTime = new Date();
+                
+                // Prepare fetch options
+                const options = {
+                    method: method,
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                };
+                
+                // Make the request
+                const response = await fetch(url, options);
+                
+                // Calculate response time
+                const endTime = new Date();
+                const responseTime = endTime - startTime;
+                
+                // Get response text
+                const responseText = await response.text();
+                
+                // Try to parse as JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    data = { error: 'Not JSON', raw: responseText };
+                }
+                
+                // Display results
+                resultDiv.innerHTML = `
+                    <p><strong>Request:</strong> ${method} ${url}</p>
+                    <p><strong>Response Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Response Time:</strong> ${responseTime}ms</p>
+                    <div class="request-details">
+                        <p><strong>Response Headers:</strong></p>
+                        <pre>${formatHeaders(response.headers)}</pre>
+                        
+                        <p><strong>Response Body:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2) || responseText}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">Error: ${error.message}</p>
+                    <div class="request-details">
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            displayBrowserInfo();
+            
+            document.getElementById('create-btn').addEventListener('click', createTestUrl);
+            document.getElementById('delete-btn').addEventListener('click', testDeleteUrl);
+            document.getElementById('fetch-test-btn').addEventListener('click', testFetch);
+        });
+    </script>
+</body>
+</html> 

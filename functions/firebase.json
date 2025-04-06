@@ -1,0 +1,23 @@
+{
+  "functions": {
+    "source": ".",
+    "runtime": "nodejs22",
+    "cleanup": {
+      "default": {
+        "container": {
+          "days": 300
+        }
+      },
+      "us-central1": {
+        "container": {
+          "days": 300
+        }
+      }
+    },
+    "artifacts": {
+      "cleanupPolicy": {
+        "ttl": "300d"
+      }
+    }
+  }
+}

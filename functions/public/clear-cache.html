@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Cache & Reload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #4a3f9f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #3a2f8f;
+        }
+        .instructions {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clear Cache & Reload</h1>
+    <p>If you're not seeing the latest changes, use this page to clear your browser cache.</p>
+    
+    <div class="instructions">
+        <h2>What this does:</h2>
+        <ul>
+            <li>Clears browser cache for this site</li>
+            <li>Forces a hard reload of all resources</li>
+            <li>Redirects you back to the main application</li>
+        </ul>
+    </div>
+    
+    <button id="clearCacheBtn">Clear Cache & Reload</button>
+    
+    <script>
+        document.getElementById('clearCacheBtn').addEventListener('click', function() {
+            // Add a timestamp parameter to force non-cached load
+            const timestamp = new Date().getTime();
+            const homeUrl = '/?cache_bust=' + timestamp;
+            
+            // Try to clear application cache if available
+            if (window.caches) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                    console.log('Cache cleared');
+                });
+            }
+            
+            // Force reload without cache
+            window.location.href = homeUrl;
+        });
+    </script>
+</body>
+</html> 

@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist",
+    "public": "functions/public",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -8,19 +8,49 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "/api/**",
         "function": "api"
+      },
+      {
+        "source": "/direct-delete/**",
+        "function": "api"
+      },
+      {
+        "source": "/r/**",
+        "function": "api"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
   },
   "functions": {
-    "source": ".",
+    "source": "./functions",
     "codebase": "default",
     "ignore": [
       "node_modules",
       ".git",
       "firebase-debug.log",
       "firebase-debug.*.log"
-    ]
+    ],
+    "runtime": "nodejs22",
+    "cleanup": {
+      "default": {
+        "container": {
+          "days": 300
+        }
+      },
+      "us-central1": {
+        "container": {
+          "days": 300
+        }
+      }
+    },
+    "artifacts": {
+      "cleanupPolicy": {
+        "ttl": "300d"
+      }
+    }
   }
 }

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener Diagnostic Tool</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f9fc;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #4a3f9f;
+        }
+        .diagnostic-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .copy-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .details-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-left: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .action-buttons {
+            display: flex;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        .output {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow: auto;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .test-buttons button {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .instruction {
+            background-color: #fff8e1;
+            padding: 10px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>URL Shortener Diagnostic Tool</h1>
+        <p>This page helps diagnose issues with the URL Shortener application.</p>
+        
+        <div class="diagnostic-section">
+            <h2>Delete Button Test</h2>
+            <p>This section tests if the delete button is correctly styled and visible.</p>
+            
+            <h3>Test Buttons</h3>
+            <div class="test-buttons">
+                <h4>Standard Buttons:</h4>
+                <button class="copy-btn">Copy Button</button>
+                <button class="details-btn">Details Button</button>
+                <button class="delete-btn">Delete Button</button>
+                
+                <h4>Action Buttons Container:</h4>
+                <div class="action-buttons">
+                    <button class="copy-btn">Copy</button>
+                    <button class="details-btn">Details</button>
+                    <button class="delete-btn">Delete</button>
+                </div>
+                
+                <h4>Inline Style Buttons:</h4>
+                <button style="background-color: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Copy Inline</button>
+                <button style="background-color: #2196F3; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Details Inline</button>
+                <button style="background-color: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete Inline</button>
+            </div>
+            
+            <h3>Table Test</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Short Code</th>
+                        <th>URL</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>abc123</td>
+                        <td>https://example.com</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="copy-btn">Copy</button>
+                                <button class="details-btn">Details</button>
+                                <button class="delete-btn">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>def456</td>
+                        <td>https://example.org</td>
+                        <td>
+                            <button class="copy-btn">Copy</button>
+                            <button class="details-btn">Details</button>
+                            <button style="background-color: #f44336; margin-left: 5px; color: white;">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="diagnostic-section">
+            <h2>CSS Inspection</h2>
+            <p>This section shows the CSS applied to the delete button.</p>
+            
+            <button id="inspect-css-btn" onclick="inspectCSS()">Inspect Delete Button CSS</button>
+            <div id="css-output" class="output"></div>
+        </div>
+        
+        <div class="diagnostic-section">
+            <h2>API Test</h2>
+            <p>This section tests if the delete API is functioning correctly.</p>
+            
+            <input type="text" id="test-shortcode" placeholder="Enter a short code to test" style="width: 300px; margin-right: 10px;">
+            <button onclick="testDeleteAPI()">Test Delete API</button>
+            <div id="api-output" class="output"></div>
+        </div>
+        
+        <div class="diagnostic-section">
+            <h2>DOM Structure Test</h2>
+            <p>This section generates table rows identical to the main app to check for rendering issues.</p>
+            
+            <button onclick="generateTableRow()">Generate Test Row</button>
+            <div id="table-container"></div>
+        </div>
+        
+        <div class="diagnostic-section">
+            <h2>Browser Information</h2>
+            <div id="browser-info"></div>
+        </div>
+        
+        <div class="instruction">
+            <h3>Troubleshooting Instructions:</h3>
+            <ol>
+                <li>Check if the delete buttons appear in the tests above</li>
+                <li>If they don't appear, there may be CSS issues - check the CSS Inspection results</li>
+                <li>If the buttons appear here but not in the main app, there might be JavaScript issues</li>
+                <li>Try the API test to verify the backend functionality</li>
+                <li>Try clearing your browser cache and reload the main app</li>
+                <li>Check your browser console for any errors</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        // Display browser information
+        function displayBrowserInfo() {
+            const browserInfo = document.getElementById('browser-info');
+            browserInfo.innerHTML = `
+                <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+                <p><strong>Browser:</strong> ${getBrowserName()}</p>
+                <p><strong>Screen Size:</strong> ${window.innerWidth}x${window.innerHeight}</p>
+                <p><strong>Device Pixel Ratio:</strong> ${window.devicePixelRatio}</p>
+            `;
+        }
+        
+        function getBrowserName() {
+            const userAgent = navigator.userAgent;
+            
+            if (userAgent.indexOf("Firefox") > -1) {
+                return "Firefox";
+            } else if (userAgent.indexOf("Opera") > -1 || userAgent.indexOf("OPR") > -1) {
+                return "Opera";
+            } else if (userAgent.indexOf("Edge") > -1 || userAgent.indexOf("Edg") > -1) {
+                return "Edge";
+            } else if (userAgent.indexOf("Chrome") > -1) {
+                return "Chrome";
+            } else if (userAgent.indexOf("Safari") > -1) {
+                return "Safari";
+            } else {
+                return "Unknown";
+            }
+        }
+        
+        // Test the delete API
+        async function testDeleteAPI() {
+            const shortCode = document.getElementById('test-shortcode').value.trim();
+            const output = document.getElementById('api-output');
+            
+            if (!shortCode) {
+                output.innerHTML = '<p class="error">Please enter a short code to test</p>';
+                return;
+            }
+            
+            output.innerHTML = '<p>Testing delete API for short code: ' + shortCode + '...</p>';
+            
+            try {
+                const response = await fetch(`/api/delete-url/${shortCode}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    output.innerHTML = `
+                        <p class="error">Error: ${data.error}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    output.innerHTML = `
+                        <p class="success">API test successful!</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                output.innerHTML = `
+                    <p class="error">Error: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // Generate a test table row
+        function generateTableRow() {
+            const container = document.getElementById('table-container');
+            
+            // Create a table if it doesn't exist
+            if (!document.getElementById('test-table')) {
+                container.innerHTML = `
+                    <table id="test-table">
+                        <thead>
+                            <tr>
+                                <th>Short Code</th>
+                                <th>Short URL</th>
+                                <th>Target URL</th>
+                                <th>Total Clicks</th>
+                                <th>Last Click</th>
+                                <th>Top Countries</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="test-table-body">
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            const tableBody = document.getElementById('test-table-body');
+            const shortCode = 'test' + Math.floor(Math.random() * 10000);
+            const shortUrl = 'https://dlzz.pro/r/' + shortCode;
+            
+            // Create row exactly as in the app.js renderStatsTable function
+            const row = document.createElement('tr');
+            
+            row.innerHTML = '<td>' + shortCode + '</td>' +
+                '<td><a href="' + shortUrl + '" target="_blank">' + shortUrl + '</a></td>' +
+                '<td><a href="https://example.com" target="_blank">https://example.com</a></td>' +
+                '<td>42</td>' +
+                '<td>2023-01-01 12:00:00</td>' +
+                '<td>US (25), UK (10), CA (7)</td>' +
+                '<td>' +
+                    '<div class="action-buttons">' +
+                        '<button class="copy-btn" onclick="alert(\'Copy clicked\')">Copy</button>' +
+                        '<button class="details-btn" onclick="alert(\'Details clicked\')">Details</button>' +
+                        '<button class="delete-btn" style="background-color: #f44336; margin-left: 5px; color: white;" onclick="alert(\'Delete clicked\')">Delete</button>' +
+                    '</div>' +
+                '</td>';
+            
+            tableBody.appendChild(row);
+        }
+        
+        // Inspect the CSS applied to delete buttons
+        function inspectCSS() {
+            const output = document.getElementById('css-output');
+            const deleteBtn = document.querySelector('.delete-btn');
+            
+            if (!deleteBtn) {
+                output.innerHTML = '<p class="error">No delete button found to inspect</p>';
+                return;
+            }
+            
+            // Get computed styles
+            const computedStyle = window.getComputedStyle(deleteBtn);
+            
+            // Important properties to check
+            const properties = [
+                'display', 'visibility', 'opacity', 'background-color', 'color',
+                'width', 'height', 'padding', 'margin', 'border',
+                'position', 'z-index', 'pointer-events'
+            ];
+            
+            let result = '<h3>Computed Styles for Delete Button</h3><ul>';
+            
+            properties.forEach(prop => {
+                result += `<li><strong>${prop}:</strong> ${computedStyle.getPropertyValue(prop)}</li>`;
+            });
+            
+            result += '</ul>';
+            
+            // Check for any style overrides
+            result += '<h3>CSS Rule Specificity Check</h3>';
+            result += '<p>Checking if any rules might be overriding the delete button styles...</p>';
+            
+            // Create a list of all stylesheets and rules
+            let cssRules = [];
+            for (let i = 0; i < document.styleSheets.length; i++) {
+                try {
+                    const sheet = document.styleSheets[i];
+                    const rules = sheet.cssRules || sheet.rules;
+                    
+                    for (let j = 0; j < rules.length; j++) {
+                        try {
+                            const rule = rules[j];
+                            if (rule.selectorText && (
+                                rule.selectorText.includes('button') || 
+                                rule.selectorText.includes('delete') ||
+                                rule.selectorText.includes('action')
+                            )) {
+                                cssRules.push({
+                                    selector: rule.selectorText,
+                                    source: sheet.href || 'inline style',
+                                    text: rule.cssText
+                                });
+                            }
+                        } catch (e) {
+                            // Skip rule if there's a security error
+                        }
+                    }
+                } catch (e) {
+                    // Skip stylesheet if there's a security error
+                }
+            }
+            
+            if (cssRules.length > 0) {
+                result += '<p>Potentially relevant CSS rules:</p><ul>';
+                cssRules.forEach(rule => {
+                    result += `<li><strong>${rule.selector}</strong> (from ${rule.source}):<br><code>${rule.text}</code></li>`;
+                });
+                result += '</ul>';
+            } else {
+                result += '<p>No potentially conflicting CSS rules found.</p>';
+            }
+            
+            output.innerHTML = result;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            displayBrowserInfo();
+        });
+    </script>
+</body>
+</html> 

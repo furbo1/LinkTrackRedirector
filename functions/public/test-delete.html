@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Delete URL Functionality</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-button {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        .code-block {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            min-height: 100px;
+        }
+        h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Delete URL Functionality</h1>
+    <p>This page tests the delete functionality for URL mappings.</p>
+    
+    <div id="message" class="message" style="display: none;"></div>
+    
+    <div>
+        <h2>1. Test the Delete Button Functionality</h2>
+        <div class="code-block">
+            <code>
+                &lt;button class="delete-btn" onclick="deleteUrlMapping('testcode')"&gt;Delete&lt;/button&gt;
+            </code>
+        </div>
+        <button class="delete-btn" onclick="deleteUrlTest('testcode')">Test Delete Button</button>
+    </div>
+    
+    <div>
+        <h2>2. Test the API Endpoint</h2>
+        <div class="code-block">
+            <code>
+                fetch('/api/delete-url/testcode', { method: 'DELETE' })
+            </code>
+        </div>
+        <button class="test-button" onclick="testDeleteEndpoint()">Test Delete API</button>
+    </div>
+    
+    <div>
+        <h2>3. Create a Test URL to Delete</h2>
+        <input type="url" id="test-url" placeholder="Enter URL to create and then delete" value="https://example.com">
+        <button class="test-button" onclick="createTestUrl()">Create Test URL</button>
+    </div>
+    
+    <h2>Response:</h2>
+    <div id="response">Results will appear here...</div>
+    
+    <script>
+        // Simulated delete function
+        function deleteUrlTest(shortCode) {
+            showMessage(`Testing delete for code: ${shortCode}. This is just a test and won't actually delete anything.`, true);
+            
+            document.getElementById('response').innerHTML = `
+                <p>Delete button clicked for code: ${shortCode}</p>
+                <p>This confirms the button works correctly.</p>
+                <p>Now try the actual API endpoint test below.</p>
+            `;
+        }
+        
+        // Test the API endpoint directly
+        async function testDeleteEndpoint() {
+            try {
+                const response = await fetch('/api/delete-url/testcode', { 
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('response').innerHTML = `
+                    <p>API Response Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                if (data.error) {
+                    showMessage(`API Error: ${data.error}`, false);
+                } else {
+                    showMessage(`API Test complete: ${data.message || 'Success'}`, true);
+                }
+            } catch (error) {
+                document.getElementById('response').innerHTML = `
+                    <p>Error testing API endpoint:</p>
+                    <pre>${error.message}</pre>
+                `;
+                showMessage(`Error: ${error.message}`, false);
+            }
+        }
+        
+        // Create a test URL to delete
+        async function createTestUrl() {
+            const url = document.getElementById('test-url').value.trim();
+            
+            if (!url) {
+                showMessage('Please enter a URL', false);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showMessage(`Error creating URL: ${data.error}`, false);
+                    return;
+                }
+                
+                const shortCode = data.shortCode || data.shortUrl.split('/').pop();
+                
+                document.getElementById('response').innerHTML = `
+                    <p>Created URL with code: ${shortCode}</p>
+                    <p>Short URL: ${data.shortUrl}</p>
+                    <p>Original URL: ${data.originalUrl}</p>
+                    <button class="delete-btn" onclick="deleteRealUrl('${shortCode}')">
+                        Delete This URL
+                    </button>
+                `;
+                
+                showMessage(`URL created with code: ${shortCode}`, true);
+            } catch (error) {
+                showMessage(`Error creating URL: ${error.message}`, false);
+            }
+        }
+        
+        // Actually delete a real URL
+        async function deleteRealUrl(shortCode) {
+            if (!confirm(`Are you sure you want to delete URL with code ${shortCode}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/delete-url/${shortCode}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showMessage(`Error deleting URL: ${data.error}`, false);
+                    return;
+                }
+                
+                document.getElementById('response').innerHTML = `
+                    <p>URL with code ${shortCode} deleted successfully!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                showMessage(`URL deleted successfully!`, true);
+            } catch (error) {
+                showMessage(`Error deleting URL: ${error.message}`, false);
+            }
+        }
+        
+        // Show message function
+        function showMessage(message, isSuccess) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = message;
+            messageEl.className = isSuccess ? 'message success' : 'message error';
+            messageEl.style.display = 'block';
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

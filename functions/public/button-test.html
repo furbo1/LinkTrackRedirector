@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Styling Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #4a3f9f;
+        }
+        .test-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        /* Test the various button styles */
+        .copy-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .details-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-left: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .action-buttons {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <h1>Button Styling Test Page</h1>
+    <p>This page tests if the button styling is working correctly.</p>
+    
+    <div class="test-container">
+        <h2>Button Class Test</h2>
+        <p>These buttons use the same classes as in the main app:</p>
+        
+        <div class="button-row">
+            <button class="copy-btn">Copy Button</button>
+            <button class="details-btn">Details Button</button>
+            <button class="delete-btn">Delete Button</button>
+        </div>
+        
+        <h2>Action Buttons Container Test</h2>
+        <p>This tests the action-buttons container:</p>
+        
+        <div class="action-buttons">
+            <button class="copy-btn">Copy</button>
+            <button class="details-btn">Details</button>
+            <button class="delete-btn">Delete</button>
+        </div>
+        
+        <h2>Inline Style Test</h2>
+        <p>This tests buttons with inline styling:</p>
+        
+        <div class="button-row">
+            <button style="background-color: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Copy Inline</button>
+            <button style="background-color: #2196F3; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Details Inline</button>
+            <button style="background-color: #f44336; margin-left: 5px; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete Inline</button>
+        </div>
+        
+        <h2>Button in Table Test</h2>
+        <p>This tests buttons in a table (like in the stats table):</p>
+        
+        <table border="1" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Short Code</th>
+                    <th>URL</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>abc123</td>
+                    <td>https://example.com</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="copy-btn">Copy</button>
+                            <button class="details-btn">Details</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>def456</td>
+                    <td>https://example.org</td>
+                    <td>
+                        <button class="copy-btn">Copy</button>
+                        <button class="details-btn">Details</button>
+                        <button style="background-color: #f44336; margin-left: 5px; color: white;">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="test-container">
+        <h2>Javascript Test</h2>
+        <p>This tests if the button event handlers work:</p>
+        
+        <div class="button-row">
+            <button onclick="alert('Copy button clicked')">Copy Test</button>
+            <button onclick="alert('Details button clicked')">Details Test</button>
+            <button onclick="alert('Delete button clicked')" style="background-color: #f44336; color: white;">Delete Test</button>
+        </div>
+    </div>
+
+</body>
+</html> 

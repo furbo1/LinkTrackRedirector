@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "dlzz-pro-b1c80"
-  }
+  },
+  "targets": {
+    "dlzz-pro-b1c80": {
+      "hosting": {
+        "dlzz-pro": [
+          "dlzz-pro-b1c80"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
