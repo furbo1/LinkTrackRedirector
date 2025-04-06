@@ -19,6 +19,10 @@ const diagnosePage = require('./diagnosePage');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)); // Polyfill fetch
+const { v4: uuidv4 } = require('uuid');
+const { URL } = require('url');
+const axios = require('axios');
+const { JSDOM } = require('jsdom');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -219,11 +223,11 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       referrer: referrer || null,
       ip: ip || null,
       country,
-      timestamp: now.toISOString(), // Use ISO string for consistent format
+      timestamp: now,
       day,
       processed: true,
-      createdAt: now.toISOString(),
-      expiresAt: expiresAt.toISOString()
+      createdAt: now,
+      expiresAt: expiresAt
     };
     
     // First try to write to Realtime Database
@@ -892,22 +896,10 @@ function processClickDocumentsIntoStats(clickSnapshot, stats) {
       clicksByShortCode[clickData.shortCode] = [];
     }
     
-    // Properly handle timestamp conversion
-    let timestamp;
-    if (clickData.timestamp) {
-      if (typeof clickData.timestamp.toDate === 'function') {
-        timestamp = clickData.timestamp.toDate();
-      } else if (typeof clickData.timestamp === 'string') {
-        timestamp = new Date(clickData.timestamp);
-      } else {
-        timestamp = new Date();
-      }
-    } else {
-      timestamp = new Date();
-    }
-    
     clicksByShortCode[clickData.shortCode].push({
-      timestamp,
+      timestamp: clickData.timestamp ? 
+        (typeof clickData.timestamp.toDate === 'function' ? clickData.timestamp.toDate() : new Date(clickData.timestamp)) 
+        : new Date(),
       targetUrl: clickData.targetUrl,
       userAgent: clickData.userAgent || '',
       referrer: clickData.referrer || '',
@@ -945,7 +937,7 @@ function processClickDocumentsIntoStats(clickSnapshot, stats) {
     });
     
     // Sort clicks by timestamp (newest first)
-    clicks.sort((a, b) => b.timestamp - a.timestamp);
+    clicks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     // Create a stat record
     stats.push({
