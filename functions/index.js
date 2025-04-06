@@ -19,10 +19,6 @@ const diagnosePage = require('./diagnosePage');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)); // Polyfill fetch
-const { v4: uuidv4 } = require('uuid');
-const { URL } = require('url');
-const axios = require('axios');
-const { JSDOM } = require('jsdom');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -2872,3 +2868,12 @@ function extractMetaContent(html, name) {
   
   return null;
 }
+
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyCy4EDuCXkoCCMUfAMbAAnjcn6xdwhjg4o',
+  authDomain: "dlzz-pro-b1c80.firebaseapp.com",
+  projectId: "dlzz-pro-b1c80",
+  storageBucket: "dlzz-pro-b1c80.appspot.com",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcdef1234567890"
+};
