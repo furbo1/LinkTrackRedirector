@@ -199,22 +199,20 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       return { success: false, error: 'Invalid shortCode' };
     }
     
-    // Create a timestamp with microsecond precision for uniqueness
+    // Use server timestamp for consistency
+    const timestamp = admin.firestore.FieldValue.serverTimestamp();
     const now = new Date();
-    const microTime = now.getTime() * 1000 + Math.floor(Math.random() * 1000); // Add microsecond component with randomness
-    const formattedTimestamp = new Date(now.getTime() + Math.random() * 100); // Add random milliseconds (0-100) to ensure uniqueness
+    const day = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const expiresAt = new Date(now.getTime() + DATA_RETENTION_PERIOD);
     
-    const day = formattedTimestamp.toISOString().split('T')[0]; // YYYY-MM-DD format
-    const expiresAt = new Date(formattedTimestamp.getTime() + DATA_RETENTION_PERIOD);
-    
-    // Generate a unique ID for this click that includes microsecond precision timestamp
-    const clickId = Date.now().toString() + Math.random().toString(36).substring(2, 10);
+    // Generate a unique ID for this click using timestamp and random string
+    const clickId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
     
     // Use country from Cloudflare if available, otherwise 'Unknown'
     let country = cfCountry || 'Unknown';
-    console.log(`Country for click: ${country}, IP: ${ip}, Time: ${formattedTimestamp.toISOString()}`);
+    console.log(`Country for click: ${country}, IP: ${ip}`);
     
-    // Create the click data with precise timestamp
+    // Create the click data
     const clickData = {
       type: 'click',
       shortCode,
@@ -223,12 +221,11 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       referrer: referrer || null,
       ip: ip || null,
       country,
-      timestamp: formattedTimestamp.toISOString(), // Use ISO string for consistent formatting
-      microTime, // Add microsecond precision for uniqueness
+      timestamp, // Use server timestamp
       day,
       processed: true,
-      createdAt: formattedTimestamp.toISOString(),
-      expiresAt: expiresAt.toISOString()
+      createdAt: now,
+      expiresAt: expiresAt
     };
     
     // First try to write to Realtime Database
@@ -239,8 +236,7 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       // Check if RTDB is accessible with a quick test
       try {
         await clicksRef.child('_test_').set({ 
-          timestamp: formattedTimestamp.toISOString(),
-          microTime,
+          timestamp: now.toISOString(),
           test: true
         });
         console.log('✅ RTDB connection test passed');
@@ -249,7 +245,7 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
         await clicksRef.child(clickId).set(clickData);
         
         rtdbSuccess = true;
-        console.log(`Click successfully stored in RTDB with ID ${clickId}, timestamp: ${formattedTimestamp.toISOString()}`);
+        console.log(`Click successfully stored in RTDB with ID ${clickId}`);
         
         // Also update summary for this shortCode
         try {
@@ -263,8 +259,8 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
             shortCode,
             targetUrl: decodedUrl,
             totalClicks: (summaryData.totalClicks || 0) + 1,
-            lastClickAt: formattedTimestamp.toISOString(),
-            lastUpdated: formattedTimestamp.toISOString(),
+            lastClickAt: now.toISOString(),
+            lastUpdated: now.toISOString(),
             expiresAt: expiresAt.toISOString()
           });
           console.log(`Updated summary for ${shortCode}`);
@@ -301,7 +297,6 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
     return { 
       success: true, 
       clickId,
-      timestamp: formattedTimestamp.toISOString(),
       rtdbSuccess,
       inMemory: !rtdbSuccess,
       inMemoryClicksCount: global.inMemoryClicks ? global.inMemoryClicks.length : 0
@@ -313,18 +308,16 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
     try {
       if (!global.inMemoryClicks) global.inMemoryClicks = [];
       
-      const emergencyTimestamp = new Date(Date.now() + Math.random() * 100);
-      
       global.inMemoryClicks.push({
         id: crypto.randomBytes(8).toString('hex'),
         shortCode,
         targetUrl: decodedUrl,
         country: cfCountry || 'Unknown',
-        timestamp: emergencyTimestamp.toISOString(),
-        day: emergencyTimestamp.toISOString().split('T')[0],
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        day: new Date().toISOString().split('T')[0],
         error: error.message,
         emergency: true,
-        expiresAt: new Date(emergencyTimestamp.getTime() + DATA_RETENTION_PERIOD).toISOString()
+        expiresAt: new Date(new Date().getTime() + DATA_RETENTION_PERIOD).toISOString()
       });
       
       console.log(`Click stored in memory as emergency fallback. Total: ${global.inMemoryClicks.length}`);
@@ -1038,10 +1031,6 @@ app.get('/r/:targetUrl', async (req, res) => {
           // Generate a unique ID for this click
           const directClickId = crypto.randomBytes(16).toString('hex');
           
-          // Create a unique timestamp with slight randomness to ensure uniqueness
-          const directTimestamp = new Date(Date.now() + Math.random() * 100);
-          const day = directTimestamp.toISOString().split('T')[0];
-          
           const clickDocRef = clicksCollection.doc(directClickId);
           await clickDocRef.set({
             type: 'click',
@@ -1051,9 +1040,8 @@ app.get('/r/:targetUrl', async (req, res) => {
             referrer: referrer || null,
             ip: ip || null,
             country: cfCountry || 'Unknown',
-            timestamp: directTimestamp.toISOString(), // Use ISO string instead of server timestamp
-            microTime: directTimestamp.getTime() * 1000 + Math.floor(Math.random() * 1000), // Add microsecond component
-            day,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            day: new Date().toISOString().split('T')[0],
             directCreated: true // Mark this as being created directly
           });
           
@@ -1069,23 +1057,17 @@ app.get('/r/:targetUrl', async (req, res) => {
           // Directly write to Firestore as a final fallback
           try {
             console.log('Attempting emergency click tracking with minimal data');
-            
-            // Create a unique timestamp with slight randomness
-            const emergencyTimestamp = new Date(Date.now() + Math.random() * 100);
-            const emergencyDay = emergencyTimestamp.toISOString().split('T')[0];
-            
             const emergencyClickRef = await clicksCollection.add({
               type: 'click',
               shortCode,
               targetUrl: decodedUrl,
-              timestamp: emergencyTimestamp.toISOString(), // Use ISO string for consistency
-              microTime: emergencyTimestamp.getTime() * 1000 + Math.floor(Math.random() * 1000),
-              day: emergencyDay,
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              day: new Date().toISOString().split('T')[0],
               country: cfCountry || 'Unknown',
               emergency: true
             });
             
-            console.log(`Emergency click tracking succeeded with ID: ${emergencyClickRef.id}, timestamp: ${emergencyTimestamp.toISOString()}`);
+            console.log(`Emergency click tracking succeeded with ID: ${emergencyClickRef.id}`);
             
             // Also update the summary document
             const summaryRef = clicksCollection.doc(`summary_${shortCode}`);
@@ -1094,7 +1076,7 @@ app.get('/r/:targetUrl', async (req, res) => {
               shortCode,
               targetUrl: decodedUrl,
               totalClicks: admin.firestore.FieldValue.increment(1),
-              lastClickAt: emergencyTimestamp.toISOString() // Use ISO string instead of server timestamp
+              lastClickAt: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
             
             console.log(`Emergency summary update completed for ${shortCode}`);
