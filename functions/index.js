@@ -199,13 +199,12 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       return { success: false, error: 'Invalid shortCode' };
     }
     
-    // Use server timestamp for consistency
-    const timestamp = admin.firestore.FieldValue.serverTimestamp();
     const now = new Date();
-    const day = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const day = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const expiresAt = new Date(now.getTime() + DATA_RETENTION_PERIOD);
     
-    // Generate a unique ID for this click using timestamp and random string
-    const clickId = `${now.getTime()}-${Math.random().toString(36).substring(2, 10)}`;
+    // Generate a unique ID for this click
+    const clickId = Date.now().toString() + Math.random().toString(36).substring(2, 10);
     
     // Use country from Cloudflare if available, otherwise 'Unknown'
     let country = cfCountry || 'Unknown';
@@ -220,11 +219,11 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       referrer: referrer || null,
       ip: ip || null,
       country,
-      timestamp: timestamp,
+      timestamp: now.toISOString(), // Use ISO string for consistent format
       day,
       processed: true,
-      createdAt: now,
-      expiresAt: new Date(now.getTime() + DATA_RETENTION_PERIOD)
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString()
     };
     
     // First try to write to Realtime Database
@@ -260,7 +259,7 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
             totalClicks: (summaryData.totalClicks || 0) + 1,
             lastClickAt: now.toISOString(),
             lastUpdated: now.toISOString(),
-            expiresAt: new Date(now.getTime() + DATA_RETENTION_PERIOD).toISOString()
+            expiresAt: expiresAt.toISOString()
           });
           console.log(`Updated summary for ${shortCode}`);
         } catch (summaryError) {
@@ -275,7 +274,7 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
       // Continue to in-memory storage
     }
     
-    // If RTDB write failed, store in memory
+    // If RTDB failed, store in memory
     if (!rtdbSuccess) {
       console.log('Storing click in memory as fallback');
       
@@ -307,17 +306,16 @@ async function trackClick(shortCode, decodedUrl, userAgent, referrer, ip, cfCoun
     try {
       if (!global.inMemoryClicks) global.inMemoryClicks = [];
       
-      const now = new Date();
       global.inMemoryClicks.push({
         id: crypto.randomBytes(8).toString('hex'),
         shortCode,
         targetUrl: decodedUrl,
         country: cfCountry || 'Unknown',
-        timestamp: now,
-        day: now.toISOString().split('T')[0],
+        timestamp: now.toISOString(),
+        day: day,
         error: error.message,
         emergency: true,
-        expiresAt: new Date(now.getTime() + DATA_RETENTION_PERIOD)
+        expiresAt: expiresAt.toISOString()
       });
       
       console.log(`Click stored in memory as emergency fallback. Total: ${global.inMemoryClicks.length}`);
@@ -894,10 +892,22 @@ function processClickDocumentsIntoStats(clickSnapshot, stats) {
       clicksByShortCode[clickData.shortCode] = [];
     }
     
+    // Properly handle timestamp conversion
+    let timestamp;
+    if (clickData.timestamp) {
+      if (typeof clickData.timestamp.toDate === 'function') {
+        timestamp = clickData.timestamp.toDate();
+      } else if (typeof clickData.timestamp === 'string') {
+        timestamp = new Date(clickData.timestamp);
+      } else {
+        timestamp = new Date();
+      }
+    } else {
+      timestamp = new Date();
+    }
+    
     clicksByShortCode[clickData.shortCode].push({
-      timestamp: clickData.timestamp ? 
-        (typeof clickData.timestamp.toDate === 'function' ? clickData.timestamp.toDate() : new Date(clickData.timestamp)) 
-        : new Date(),
+      timestamp,
       targetUrl: clickData.targetUrl,
       userAgent: clickData.userAgent || '',
       referrer: clickData.referrer || '',
@@ -935,7 +945,7 @@ function processClickDocumentsIntoStats(clickSnapshot, stats) {
     });
     
     // Sort clicks by timestamp (newest first)
-    clicks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    clicks.sort((a, b) => b.timestamp - a.timestamp);
     
     // Create a stat record
     stats.push({
